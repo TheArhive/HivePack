@@ -1,7 +1,7 @@
 import { user_avatar } from '../../../../script.js';
 
 const KEY = 'hivepack';
-const defaults = { enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7 };
+const defaults = { enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false };
 let queued = false;
 let revision = 0;
 let lastAvatar;
@@ -10,8 +10,8 @@ let avatarUrl = '';
 function context() { return SillyTavern.getContext(); }
 function settings() {
     const c = context();
-    c.extensionSettings[KEY] ??= { ...defaults, ...c.extensionSettings.ripple_persona_portrait };
-    for (const [key, value] of Object.entries(defaults)) c.extensionSettings[KEY][key] ??= value;
+    c.extensionSettings[KEY] ??= { ...defaults, overrides: [], ...c.extensionSettings.ripple_persona_portrait };
+    for (const [key, value] of Object.entries(defaults)) c.extensionSettings[KEY][key] ??= Array.isArray(value) ? [...value] : value;
     return c.extensionSettings[KEY];
 }
 function schedule() {
@@ -145,7 +145,14 @@ function updateThoughtPortrait(card, s) {
     if (!portrait) {
         portrait = document.createElement('span');
         portrait.className = 'hp-thought-portrait';
-        portrait.setAttribute('aria-hidden', 'true');
+        portrait.setAttribute('role', 'button');
+        portrait.setAttribute('tabindex', '0');
+        portrait.setAttribute('aria-label', `View portrait of ${card.dataset.hpSpeaker}`);
+        const open = () => openPortraitViewer(portrait.firstElementChild.src, card.dataset.hpSpeaker);
+        portrait.addEventListener('click', e => { e.stopPropagation(); open(); });
+        portrait.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); open(); }
+        });
         const img = document.createElement('img');
         img.alt = '';
         img.loading = 'lazy';
@@ -184,7 +191,7 @@ function trimText(root, count, fromStart) {
 const ranges = {
     desktopWidth: [0,400,0], mobileWidth: [0,400,0], bubbleWidth: [200,1200,450],
     fontSize: [60,150,92], backgroundOpacity: [0,60,8], portraitWidth: [35,180,80],
-    hoverStrength: [0,5,1.5], cornerRadius: [0,30,7],
+    hoverStrength: [0,20,1.5], cornerRadius: [0,30,7],
 };
 function applyAppearance(s) {
     const vars = { bubbleWidth: ['--hp-width','px'], fontSize: ['--hp-font','%'],
@@ -234,8 +241,8 @@ function resolvePortrait(speaker, s) {
         const card = cards[c.characterId];
         if (card?.avatar && card.avatar !== 'none') return c.getThumbnailUrl('avatar',card.avatar);
     }
-    const matches = cards.filter(card => normalizedName(card.name) === name && card.avatar && card.avatar !== 'none');
-    return matches.length === 1 ? c.getThumbnailUrl('avatar',matches[0].avatar) : '';
+    // Library-wide automatic matching was unreliable in live use. Use explicit card/photo overrides.
+    return '';
 }
 function rawThoughts(text) {
     // Ignore literal examples in fenced/inline code. Only explicitly closed tags qualify.
@@ -302,6 +309,9 @@ function applyThoughtColour(card, s) {
     }
 }
 const collapsedThoughts = new Set();
+const knownThoughts = new Set();
+let autoCollapseBefore = -1;
+let generationSnapshot = null;
 function toggleThought(card) {
     if (!settings().collapsible) return;
     const key = card.dataset.hpCollapseKey;
@@ -310,7 +320,15 @@ function toggleThought(card) {
     refreshMessageButtons(settings());
 }
 function updateCollapse(card,s) {
-    const collapsed = s.collapsible && collapsedThoughts.has(card.dataset.hpCollapseKey);
+    const key = card.dataset.hpCollapseKey;
+    if (!knownThoughts.has(key)) {
+        knownThoughts.add(key);
+        const mes = card.closest('.mes');
+        const rawId = mes?.getAttribute('mesid');
+        const id = rawId === null ? NaN : Number(rawId);
+        if (s.defaultCollapsed || (s.autoCollapsePrevious && Number.isFinite(id) && id < autoCollapseBefore)) collapsedThoughts.add(key);
+    }
+    const collapsed = s.collapsible && collapsedThoughts.has(key);
     card.classList.toggle('hp-collapsed',Boolean(collapsed));
     const label = card.querySelector('.hp-monologue-name');
     if (s.collapsible) {
@@ -361,11 +379,15 @@ function safeImagePath(path) {
         return url.origin===base.origin && ['http:','https:'].includes(url.protocol) ? url.href : '';
     }catch{return '';}
 }
-async function uploadPortrait(file) {
+function validatePhoto(file) {
     const formats={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif'};
     const format=formats[file?.type];
     if(!format)throw new Error('Choose a PNG, JPEG, WebP, or GIF image.');
     if(file.size>10*1024*1024)throw new Error('Choose an image smaller than 10 MB.');
+    return format;
+}
+async function uploadPortrait(file) {
+    const format=validatePhoto(file);
     const dataUrl=await new Promise((resolve,reject)=>{
         const reader=new FileReader();reader.onload=()=>resolve(reader.result);
         reader.onerror=()=>reject(new Error('Could not read the selected image.'));reader.readAsDataURL(file);
@@ -381,6 +403,54 @@ async function uploadPortrait(file) {
     // Store a server-relative URL so it also works when opening this server from another device.
     const url=new URL(path);return `${url.pathname}${url.search}`;
 }
+function fullPortraitSource(src) {
+    const safe=safeImagePath(src);if(!safe)return '';
+    const url=new URL(safe);
+    if(url.pathname.endsWith('/thumbnail') && url.searchParams.get('type')==='avatar') {
+        const file=url.searchParams.get('file');
+        if(file && !/[\\/]/.test(file))return new URL(`characters/${encodeURIComponent(file)}`,document.baseURI).href;
+    }
+    return safe;
+}
+let dismissPortraitViewer = null;
+function openPortraitViewer(src,title='Portrait') {
+    const imagePath=fullPortraitSource(src);if(!imagePath)return;
+    dismissPortraitViewer?.();
+    const origin=document.activeElement;
+    const dialog=document.createElement('dialog');dialog.className='hp-portrait-dialog';dialog.setAttribute('aria-label',title);
+    const close=document.createElement('button');close.type='button';close.className='hp-viewer-close';close.textContent='Close';
+    const img=document.createElement('img');img.src=imagePath;img.alt=title;
+    const error=document.createElement('p');error.hidden=true;error.textContent='Could not load this portrait.';
+    img.addEventListener('error',()=>{img.hidden=true;error.hidden=false;});
+    const cleanup=()=>{document.removeEventListener('keydown',escape);dialog.remove();dismissPortraitViewer=null;origin?.focus?.();};
+    const dismiss=()=>{if(typeof dialog.close==='function')dialog.close();else cleanup();};
+    const escape=e=>{if(e.key==='Escape'){e.preventDefault();dismiss();}};
+    dismissPortraitViewer=dismiss;
+    close.addEventListener('click',dismiss);dialog.addEventListener('close',cleanup,{once:true});
+    dialog.addEventListener('click',e=>{if(e.target===dialog)dismiss();});
+    document.addEventListener('keydown',escape);dialog.append(close,img,error);document.body.append(dialog);
+    if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');
+    close.focus();
+}
+async function listPortraitPhotos() {
+    const response=await fetch('/api/images/list',{method:'POST',headers:context().getRequestHeaders(),body:JSON.stringify({folder:'HivePack',sortField:'date',sortOrder:'desc'})});
+    if(!response.ok)throw new Error(`Could not list saved photos (${response.status}).`);
+    const files=await response.json();if(!Array.isArray(files))throw new Error('Unexpected photo list from the server.');
+    return files.filter(file=>typeof file==='string' && !/[\\/]/.test(file) && /\.(png|jpe?g|webp|gif)$/i.test(file))
+        .map(file=>`/user/images/HivePack/${encodeURIComponent(file)}`);
+}
+async function deletePortraitPhoto(image) {
+    const safe=safeImagePath(image);if(!safe)throw new Error('Invalid photo path.');
+    const pathname=new URL(safe).pathname;
+    const prefix='/user/images/HivePack/';
+    if(!pathname.startsWith(prefix))throw new Error('Only HivePack uploaded photos can be deleted here.');
+    const filename=decodeURIComponent(pathname.slice(prefix.length));
+    if(!filename || /[\\/]/.test(filename) || filename==='.' || filename==='..')throw new Error('Invalid photo filename.');
+    const response=await fetch('/api/images/delete',{method:'POST',headers:context().getRequestHeaders(),body:JSON.stringify({path:`user/images/HivePack/${filename}`})});
+    if(!response.ok)throw new Error(`Could not delete photo (${response.status}). Existing overrides were kept.`);
+    settings().overrides=settings().overrides.filter(item=>!item.image || safeImagePath(item.image)!==safe);
+    context().saveSettingsDebounced();
+}
 function addSettings() {
     const host = document.querySelector('#extensions_settings');
     if (!host || document.getElementById('hivepack-settings')) return;
@@ -393,14 +463,15 @@ function addSettings() {
         const span=document.createElement('span');span.textContent=title;label.append(input,span);area.append(label);
         input.addEventListener('change',()=>{settings()[key]=input.checked;context().saveSettingsDebounced();schedule();});
     };
-    for(const [key,title] of Object.entries({monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits (including recognized character cards)',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',enabled:'Show persona beside full messages (Ripple only)'})) checkbox(key,title);
+    for(const [key,title] of Object.entries({monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)'})) checkbox(key,title);
+    const appearance=document.createElement('details');appearance.className='hp-appearance';
+    const appearanceSummary=document.createElement('summary');appearanceSummary.textContent='Appearance';appearance.append(appearanceSummary);area.append(appearance);
     const number=(key,title)=>{
         const label=document.createElement('label');label.textContent=title;
         const input=document.createElement('input');input.type='number';input.className='text_pole';input.dataset.rpp=key;
-        input.min=ranges[key][0];input.max=ranges[key][1];input.step=key==='hoverStrength' ? '.1' : '1';input.value=settings()[key];label.append(input);area.append(label);
+        input.min=ranges[key][0];input.max=ranges[key][1];input.step=key==='hoverStrength' ? '.1' : '1';input.value=settings()[key];label.append(input);appearance.append(label);
         input.addEventListener('change',()=>{settings()[key]=safeNumber(key,input.value);input.value=settings()[key];context().saveSettingsDebounced();schedule();});
     };
-    const title=document.createElement('b');title.textContent='Appearance';area.append(title);
     for(const [key,label] of Object.entries({bubbleWidth:'Maximum thought width (px)',fontSize:'Thought font size (%)',backgroundOpacity:'Background opacity (%)',portraitWidth:'Thought portrait width (px)',hoverStrength:'Hover enlargement (%)',cornerRadius:'Corner radius (px)',desktopWidth:'Full-message persona width (0 = Ripple default)',mobileWidth:'Mobile full-message persona width (0 = Ripple default)'})) number(key,label);
     const aliasesLabel=document.createElement('label');aliasesLabel.textContent='Aliases: one Alias = Character Name per line';
     const aliases=document.createElement('textarea');aliases.className='text_pole';aliases.rows=4;aliases.placeholder='Appy = Apothos\nCorazón = Apothos';aliases.value=settings().aliases;aliasesLabel.append(aliases);area.append(aliasesLabel);
@@ -434,34 +505,94 @@ function addSettings() {
         settings().overrides=settings().overrides.filter(item=>normalizedName(item.name)!==normalizedName(speaker));
         settings().overrides.push({name:speaker,avatar:select.value});context().saveSettingsDebounced();renderList();schedule();
     });
-    const uploadLabel=document.createElement('label');uploadLabel.textContent='Or upload a custom portrait for the speaker above:';
-    const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp,image/gif';file.className='text_pole';file.setAttribute('aria-label','Custom portrait image');uploadLabel.append(file);
-    const upload=document.createElement('button');upload.type='button';upload.className='menu_button';upload.textContent='Upload photo and set override';
+    const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp,image/gif';file.className='hp-file-input';file.setAttribute('aria-label','Custom portrait image');
+    const picker=document.createElement('button');picker.type='button';picker.className='hp-photo-picker';
+    const preview=document.createElement('img');preview.hidden=true;preview.alt='Selected custom portrait';
+    const pickerText=document.createElement('span');pickerText.textContent='＋ Choose custom photo';picker.append(preview,pickerText);
+    picker.addEventListener('click',()=>file.click());
+    let previewUrl='';
+    const clearPreview=()=>{if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl='';}preview.removeAttribute('src');preview.hidden=true;pickerText.textContent='＋ Choose custom photo';};
     const status=document.createElement('small');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+    file.addEventListener('change',()=>{
+        clearPreview();const selected=file.files?.[0];if(!selected)return;
+        try{validatePhoto(selected);previewUrl=URL.createObjectURL(selected);preview.src=previewUrl;preview.hidden=false;pickerText.textContent=`${selected.name || 'Selected photo'} · click to change`;status.textContent='';}
+        catch(error){file.value='';status.textContent=error.message;}
+    });
+    window.addEventListener('beforeunload',()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);},{once:true});
+    const upload=document.createElement('button');upload.type='button';upload.className='menu_button';upload.textContent='Upload photo and set override';
+    function setPhotoOverride(speaker,image){
+        settings().overrides=settings().overrides.filter(item=>normalizedName(item.name)!==normalizedName(speaker));
+        settings().overrides.push({name:speaker,image});context().saveSettingsDebounced();renderList();schedule();
+    }
     upload.addEventListener('click',async()=>{
         const speaker=name.value.trim(), selected=file.files?.[0];
         if(!speaker){status.textContent='Enter a speaker name first.';return;}
         if(!selected){status.textContent='Choose a photo first.';return;}
-        upload.disabled=true;add.disabled=true;file.disabled=true;status.textContent='Uploading photo…';
+        upload.disabled=true;add.disabled=true;file.disabled=true;picker.disabled=true;status.textContent='Uploading photo…';
         try{
-            const image=await uploadPortrait(selected);
-            settings().overrides=settings().overrides.filter(item=>normalizedName(item.name)!==normalizedName(speaker));
-            settings().overrides.push({name:speaker,image});context().saveSettingsDebounced();renderList();schedule();
-            file.value='';status.textContent=`Custom photo saved for ${speaker}.`;
+            const image=await uploadPortrait(selected);setPhotoOverride(speaker,image);
+            file.value='';clearPreview();status.textContent=`Custom photo saved for ${speaker}.`;
+            if(!gallery.hidden)await loadGallery();
         }catch(error){status.textContent=error.message || 'Could not upload the photo.';}
-        finally{upload.disabled=false;add.disabled=false;file.disabled=false;}
+        finally{upload.disabled=false;add.disabled=false;file.disabled=false;picker.disabled=false;}
     });
-    const uploadHelp=document.createElement('small');uploadHelp.textContent='PNG, JPEG, WebP, or GIF, up to 10 MB. Photos are stored on your SillyTavern server. Removing an override leaves the uploaded file on the server.';
-    area.append(name,select,add,uploadLabel,upload,uploadHelp,status,list);renderList();
+    const uploadHelp=document.createElement('small');uploadHelp.textContent='PNG, JPEG, WebP, or GIF, up to 10 MB. Uploads are saved on your SillyTavern server and can be reused below.';
+    const browse=document.createElement('button');browse.type='button';browse.className='menu_button';browse.textContent='Browse saved photos';
+    const gallery=document.createElement('div');gallery.className='hp-photo-gallery';gallery.hidden=true;
+    let galleryRequest=0;
+    async function loadGallery(){
+        const request=++galleryRequest;gallery.hidden=false;gallery.textContent='Loading saved photos…';browse.disabled=true;
+        try{
+            const photos=await listPortraitPhotos();if(request!==galleryRequest)return;gallery.replaceChildren();
+            if(!photos.length)gallery.textContent='No saved HivePack photos yet.';
+            for(const image of photos){
+                const tile=document.createElement('div');tile.className='hp-photo-tile';
+                const view=document.createElement('button');view.type='button';view.className='hp-photo-view';view.setAttribute('aria-label','View saved portrait');
+                const thumb=document.createElement('img');thumb.src=image;thumb.alt=image.split('/').pop();thumb.loading='lazy';view.append(thumb);view.addEventListener('click',()=>openPortraitViewer(image,'Saved portrait'));
+                const use=document.createElement('button');use.type='button';use.className='menu_button';use.textContent='Use photo';use.addEventListener('click',()=>{
+                    const speaker=name.value.trim();if(!speaker){status.textContent='Enter a speaker name above first.';name.focus();return;}
+                    setPhotoOverride(speaker,image);status.textContent=`Saved photo selected for ${speaker}.`;
+                });
+                const remove=document.createElement('button');remove.type='button';remove.className='menu_button';remove.textContent='Delete photo';
+                remove.addEventListener('click',async()=>{
+                    const uses=settings().overrides.filter(item=>item.image && safeImagePath(item.image)===safeImagePath(image));
+                    if(!confirm(`Permanently delete this photo?${uses.length ? ' Its '+uses.length+' portrait override(s) will also be removed.' : ''}`))return;
+                    remove.disabled=true;use.disabled=true;
+                    try{await deletePortraitPhoto(image);renderList();schedule();status.textContent='Photo deleted.';await loadGallery();}
+                    catch(error){status.textContent=error.message;remove.disabled=false;use.disabled=false;}
+                });
+                tile.append(view,use,remove);gallery.append(tile);
+            }
+        }catch(error){gallery.textContent=error.message;}
+        finally{if(request===galleryRequest)browse.disabled=false;}
+    }
+    browse.addEventListener('click',loadGallery);
+    area.append(name,select,add,file,picker,upload,uploadHelp,status,browse,gallery,list);renderList();
     host.append(panel);
 }
 function init() {
     addSettings();
     const c = context();
     const events = c.eventTypes ?? c.event_types;
+    if(events.GENERATION_STARTED)c.eventSource.on(events.GENERATION_STARTED,(type,options,dryRun)=>{
+        const ctx=context();
+        generationSnapshot=!dryRun && !['quiet','impersonate'].includes(type) ? {chat:ctx.chat,id:ctx.getCurrentChatId?.() ?? ctx.chatId,last:ctx.chat?.at(-1)?.mes,length:ctx.chat?.length} : null;
+    });
+    if(events.GENERATION_ENDED)c.eventSource.on(events.GENERATION_ENDED,()=>{
+        const snapshot=generationSnapshot;generationSnapshot=null;const ctx=context();
+        if(!snapshot || snapshot.chat!==ctx.chat || snapshot.id!==(ctx.getCurrentChatId?.() ?? ctx.chatId))return;
+        if(snapshot.length===ctx.chat?.length && snapshot.last===ctx.chat?.at(-1)?.mes)return;
+        if(!settings().autoCollapsePrevious || !settings().collapsible)return;
+        const latest=ctx.chat?.findLastIndex(message=>!message.is_user && !message.is_system) ?? -1;
+        if(latest<0)return;autoCollapseBefore=latest;
+        document.querySelectorAll('#chat > .mes').forEach(mes=>{
+            const id=Number(mes.getAttribute('mesid'));if(!Number.isFinite(id) || id>=latest)return;
+            mes.querySelectorAll('.hp-monologue').forEach(card=>collapsedThoughts.add(card.dataset.hpCollapseKey));
+        });schedule();
+    });
     for (const name of ['CHAT_CHANGED', 'CHARACTER_MESSAGE_RENDERED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'PERSONA_CHANGED', 'PERSONA_UPDATED', 'GENERATION_ENDED', 'GENERATION_STOPPED', 'STREAM_TOKEN_RECEIVED', 'CHARACTER_EDITED']) {
         if (events[name]) c.eventSource.on(events[name], () => {
-            if (name === 'CHAT_CHANGED') { collapsedThoughts.clear();savedColourSignature=''; }
+            if (name === 'CHAT_CHANGED') { collapsedThoughts.clear();knownThoughts.clear();autoCollapseBefore=-1;generationSnapshot=null;savedColourSignature=''; }
             if (name.startsWith('PERSONA_')) lastAvatar = undefined;
             schedule();
         });

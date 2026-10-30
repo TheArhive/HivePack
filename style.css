@@ -204,3 +204,25 @@ body.ripplestyle.rpp-enabled #chat > .mes > .rpp-column > .rpp-image {
 }
 #chat .mesAvatarWrapper > .hp-toggle-message-thoughts:hover { background: rgba(130,155,190,.18); }
 #chat .mesAvatarWrapper > .hp-toggle-message-thoughts:focus-visible { outline: 1px solid currentColor;outline-offset: 2px; }
+
+/* Portrait viewing and uploaded-photo management. */
+#chat .mes_text .hp-thought-portrait { pointer-events: auto;cursor: zoom-in; }
+#chat .mes_text .hp-thought-portrait:focus-visible { outline: 2px solid var(--hp-colour,#91a8c5);outline-offset: -2px; }
+.hp-appearance { margin: 12px 0;padding: 9px;border: 1px solid rgba(130,155,190,.25);border-radius: 7px; }
+.hp-appearance > summary { cursor: pointer;font-weight: 600; }
+.hp-appearance > label { display: block;margin: 8px 0; }
+.hp-file-input { position: absolute;width: 1px;height: 1px;opacity: 0;clip-path: inset(50%);overflow: hidden;pointer-events: none; }
+.hp-photo-picker { display: flex;align-items: center;gap: 12px;width: 100%;min-height: 78px;margin: 10px 0;padding: 12px;border: 1px dashed currentColor;border-radius: 8px;background: rgba(130,155,190,.1);color: inherit;cursor: pointer;text-align: left; }
+.hp-photo-picker img { width: 64px;height: 80px;object-fit: cover;border-radius: 6px; }
+.hp-photo-picker:hover { background: rgba(130,155,190,.2); }
+.hp-photo-gallery { display: grid;grid-template-columns: repeat(auto-fill,minmax(105px,1fr));gap: 10px;margin: 10px 0; }
+.hp-photo-gallery[hidden], .hp-photo-picker img[hidden] { display: none; }
+.hp-photo-tile { min-width: 0;display: flex;flex-direction: column;gap: 4px;padding: 5px;border: 1px solid rgba(130,155,190,.25);border-radius: 7px; }
+.hp-photo-view { padding: 0;border: 0;background: transparent;cursor: zoom-in; }
+.hp-photo-view img { width: 100%;height: 120px;object-fit: cover;border-radius: 5px; }
+.hp-photo-tile .menu_button { width: 100%;margin: 0; }
+.hp-portrait-dialog { padding: 14px;border: 1px solid rgba(145,168,197,.5);border-radius: 10px;background: #151b24;color: #d7e0eb;max-width: 94vw;max-height: 94vh;overflow: auto; }
+.hp-portrait-dialog::backdrop { background: rgba(0,0,0,.8); }
+.hp-portrait-dialog > img { display: block;max-width: 86vw;max-height: 80vh;width: auto;height: auto;object-fit: contain;border-radius: 5px; }
+.hp-portrait-dialog > img[hidden], .hp-portrait-dialog > p[hidden] { display: none; }
+.hp-viewer-close { display: block;margin: 0 0 10px auto;padding: 6px 14px;cursor: pointer;border-radius: 5px;border: 1px solid #91a8c5;background: transparent;color: inherit; }

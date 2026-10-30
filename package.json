@@ -1,0 +1,13 @@
+{
+  "name": "sillytavern-hivepack",
+  "version": "1.5.0",
+  "private": true,
+  "description": "HivePack development checks. No build required for SillyTavern.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/hivepack.test.cjs"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.14"
+  }
+}

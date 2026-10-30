@@ -1,23 +1,26 @@
-Passed:
-- v1.4 per-message collapse/expand, mixed-state sync, token-counter placement, message isolation, and removal when disabled.
-- v1.4 mocked custom-photo upload: correct API payload and headers, saved override, alias resolution, MIME/size checks, same-origin URL validation, preserved override and restored controls on server failure.
-- JavaScript module syntax, manifest JSON and asset references, ZIP integrity.
-- Multiple monologues and preservation of sanitized inline markup.
-- Exclusion of code, user/system messages, and ordinary italics.
-- Inline colour parsing, RGB accents, clean names, missing/invalid colour fallback.
-- Persona URL encoding, persona/active-character switching, portrait toggles.
-- Existing standalone portrait preference migration.
-- Recognized library card portraits; duplicate-name ambiguity handling.
-- Alias chains, persona aliases, and safe alias-cycle handling.
-- Portrait overrides, disabled portraits, and override priority.
-- Remembered colours in chat metadata, alias sharing, no redundant save calls, isolation between chats.
-- Collapse/expand controls and ARIA state; disabling collapsibility.
-- Appearance variable updates and range checks.
-- Streaming: completed first thought renders, unfinished browser-auto-closed thought waits, closing tag releases it.
-- Reversible formatting and restoration of original source nodes.
-- Mutation observers settle without infinite wrapping.
+HivePack 1.5.0
 
-DOM tests use linkedom with mocked SillyTavern context and events.
-Not completed: full-browser rendering, hover/mobile/sticky layout, and testing inside a running SillyTavern installation.
+Passed: JavaScript module syntax, manifest JSON/asset references, ZIP integrity.
+DOM regression tests (linkedom with mocked SillyTavern context/events) cover:
+- Multiple thought cards; preserved inline markup; ordinary italics and code/user/system exclusions.
+- Colour parsing, fallback, alias chains/cycles, per-chat colour memory and isolation.
+- Active-character/persona portraits; explicit card/photo overrides and priority.
+- Removal of unreliable automatic matching against unrelated character cards.
+- Per-thought and per-message collapse controls; mixed-state synchronization.
+- Default collapse state; manual expansion preserved on refresh.
+- Auto-collapse older messages after changed generation, with quiet/unchanged exclusions.
+- Streaming completion gate and reversible display formatting.
+- Appearance submenu defaults closed; hover control clamps to 20%.
+- Portrait viewer opens original card image and closes cleanly.
+- Custom-photo validation, preview, correct upload payload, persistence, failure preservation.
+- Saved-photo listing/reuse; filtered filenames; cancelled deletion makes no request.
+- Confirmed deletion uses the scoped server path and removes referencing overrides.
+- Failed deletion keeps overrides; other image folders cannot be deleted here.
+- Mutation observers settle without repeated wrapping.
 
-Custom photo upload was tested with a mocked API; a real SillyTavern server upload remains unverified.
+Source contracts inspected: SillyTavern script.js, scripts/st-context.js, scripts/events.js,
+scripts/extensions/gallery/index.js, src/endpoints/images.js; Moonlit Echoes Ripple CSS.
+
+Not completed:
+- Full-browser visual/layout testing, native dialog keyboard behavior, or mobile layout.
+- Real image upload/list/delete calls against a running SillyTavern instance.

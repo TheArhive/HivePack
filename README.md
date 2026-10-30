@@ -1,101 +1,133 @@
-# HivePack 1.4.0
+# HivePack
 
-SillyTavern companion extension: full-message persona portraits for Moonlit Echoes Ripple style, plus styled inner monologues in all themes.
+A SillyTavern extension for styled character thoughts and portrait-enhanced messages.
 
-## Install / upgrade
+## Installation
 
-1. Disable the old monologue replacement regex so original `<i>` markup reaches HivePack.
-2. Remove the standalone `ripple-persona-portrait` folder if present.
-3. Replace the existing `HivePack` folder with this ZIP's `HivePack` folder inside `SillyTavern/public/scripts/extensions/third-party/`.
-4. Confirm the path is `SillyTavern/public/scripts/extensions/third-party/HivePack/manifest.json`.
-5. Reload SillyTavern. Open Extensions > HivePack for controls.
+1. Open SillyTavern's **Extensions** panel and select **Install extension** / **Install from URL**.
+2. Paste the Git clone URL of the GitHub repository hosting this README and install it.
+3. Reload SillyTavern, then open **Extensions → HivePack**.
 
-Manual installation only: Install from URL expects a Git repository, not a ZIP.
+Use SillyTavern's extension manager to update the extension from its repository. If you previously used a display regex to replace thought tags with HTML, disable that regex so HivePack receives the original `<i>` tags. Saved message text is not rewritten by HivePack.
 
-## Thought format and colours
+## Author's Note / model instructions
 
-```html
-<i>Mira | #9BD4A8: He means it. He has no idea.</i>
+This is the instruction used in the Author's Note to make the model output thoughts in HivePack's format:
+
+```text
+Interweave character's inner monologue (this can be any character present in the scene, including {{user}}) through the response between <i></i> while featuring the characters name
+Eg: <i>Tomy | #Hex: I can't believe I have to explain this again.</i>
 ```
 
-The name labels, border, background tint, and hover use the supplied colour. Body text keeps its readable blue-gray colour. `<i>Mira: A thought without a colour.</i>` also works.
+`#Hex` in that example is a placeholder. Ask the model to use a real six-digit hexadecimal colour, preferably the same colour it uses for that character's dialogue:
 
-With Remember colours enabled, a missing/invalid colour uses the last valid colour learned for that character in the current chat. If none is known, the default blue-gray style applies. Colours are saved in chat metadata, independently of global extension settings. Valid existing thoughts rebuild the mapping on reload. A thought with its own valid colour always keeps that explicit colour. Disabling colour memory uses explicit colours only.
+```html
+<i>Tomy | #9BD4A8: I can't believe I have to explain this again.</i>
+```
 
-Only AI message text is formatted. User/system messages, code examples, and ordinary unnamed italics are excluded. Saved message text, prompts, and injections are not rewritten.
+The exact shape is **Name | #RRGGBB: Thought** inside `<i></i>`. Use the same character names consistently, or add aliases in HivePack. Thoughts can belong to anyone in the scene, including the current persona. Ordinary `<i>Name: Thought</i>` tags also work: HivePack uses a remembered colour if available, otherwise its blue-gray fallback.
 
-## Recognized portraits
+## Theme and dialogue colours
 
-Resolution order:
+The **side persona portrait beside full messages** requires [Moonlit Echoes Theme](https://github.com/RivelleDays/SillyTavern-MoonlitEchoesTheme) with **Ripple style** selected. Thought bubbles and their smaller portraits work in other themes too.
 
-1. A portrait override for the speaker or canonical alias target.
+This setup uses [Megumin Suite](https://github.com/Arif-salah/Megumin-Suite-Beta) for colour-coded dialogue. **Megumin Suite is optional.** Your preset can handle dialogue colours instead. HivePack reads the colour in each thought's header; it does not require another extension or infer a speaker from coloured dialogue.
+
+## Features
+
+### Thought styling and colour memory
+
+Name labels, borders, background tint, and hover accents use the supplied thought colour. Body text keeps a readable blue-gray colour. Missing or invalid colours fall back to the last valid colour learned for that character in the current chat, or the default style if no colour is known.
+
+Colour memory is saved in chat metadata and shared by aliases of the same character. Explicit colours always take precedence for their own thought. Disable **Remember colours in this chat** to use explicit colours only.
+
+### Portraits and aliases
+
+Portrait matching checks:
+
+1. A speaker or alias-target override.
 2. The current persona when the name matches `{{user}}`.
-3. The active character when the name matches `{{char}}`.
-4. A unique matching card among SillyTavern's loaded character cards.
-5. No portrait when no match exists or multiple cards share the name.
+3. The active chat character when the name matches `{{char}}`.
+4. No portrait if there is no match.
 
-Names ignore case, surrounding whitespace, and repeated spaces. Full names must otherwise match. When persona and character names are identical, persona wins unless overridden. All thought portraits work independently of the full-message Ripple portrait setting.
+Matching ignores case and repeated spaces but otherwise requires the full name. Persona wins when the persona and active character have the same name, unless you set an override.
 
-Images crop to the bubble height, with rounded corners and an inward/bottom fade. Failed images hide themselves without leaving a broken-image column.
+Automatic name matching against other character cards has been removed because it was unreliable. **You can still explicitly choose any loaded character card as a portrait override**, including duplicate-name cards distinguished by their filenames. Custom uploaded portraits are also supported.
 
-## Character aliases
-
-In the Aliases field, write one mapping per line:
+Aliases use one mapping per line:
 
 ```text
 Appy = Apothos
 Corazón = Apothos
-Ser Marco = Marco
+Professor Bine = Ilya
 ```
 
-Use the target's actual card/persona name. Aliases affect both portraits and remembered colours. Displayed labels retain the name the model wrote. Alias chains work; cycles are ignored safely. Aliases are global preferences.
+Aliases affect portraits and remembered colours. Labels retain the name written by the model. Alias chains are supported; cycles are safely ignored. Aliases and portrait overrides are global preferences.
 
-## Portrait overrides
+### Custom photos and saved-photo management
 
-Under Portrait overrides, enter the speaker name, select a card, and click Add / replace override. The dropdown includes card filenames so duplicate names can be distinguished. You can also choose Current persona or No portrait. Remove an override to restore automatic matching. Overrides are global preferences and identify cards by avatar filename; renaming/removing a card may require updating the override. Focus the dropdown to refresh its card list after creating a new card.
+Under **Portrait overrides**, enter a speaker name and either:
 
-### Custom photo uploads
+- Choose a loaded card, Current persona, or No portrait, then click **Add / replace override**.
+- Click the clearly marked **Choose custom photo** control, select an image, review its preview, and click **Upload photo and set override**.
+- Click **Browse saved photos**, then **Use photo** below a previously uploaded portrait.
 
-Enter the speaker name in Portrait overrides, choose a file under Or upload a custom portrait, then click Upload photo and set override. The upload directly saves an override for that speaker; you do not need the card dropdown or Add / replace override button for this route.
+PNG, JPEG, WebP, and GIF files up to 10 MB are accepted. Images are stored in the HivePack image folder on your SillyTavern server. Settings store server-relative paths so the same photos remain available on reload and when using the same server from another device.
 
-PNG, JPEG, WebP, and GIF files up to 10 MB are accepted. The image is stored using SillyTavern's image upload API in its HivePack image folder. The server-relative path is saved in the override, so reloading or opening the same server from another device keeps it available. The current override is preserved if upload fails. Removing or replacing an override does not delete the old uploaded image from the server. Backups of settings alone do not include these image files.
+**Remove** on an override removes only the assignment. **Delete photo** in the saved-photo browser permanently deletes that uploaded file after confirmation and removes all current HivePack overrides that reference it. Deletion is limited to the HivePack image folder. Failed uploads or deletions preserve existing overrides. Back up both settings and uploaded image files if moving servers.
 
-Custom photos follow the same alias and override-priority rules as card portraits. They affect thought portraits, not the full-message persona portrait.
+### Expanded portrait viewer
 
-## Appearance controls
+Click a thought's portrait to open a larger view. Keyboard users can focus the portrait and press Enter or Space. Close the viewer with its Close button, Escape, or a click on the backdrop. Character-card thumbnails use the original card image when opening the viewer.
 
-- Maximum bubble width: 200–1200 px, constrained to the message width.
-- Thought font size: 60–150% of surrounding text.
-- Background opacity: 0–60%.
-- Thought portrait width: 35–180 px, constrained on narrow screens.
-- Hover enlargement: 0–5%.
-- Corner radius: 0–30 px.
-- Full-message persona portrait widths: desktop/mobile overrides; 0 uses Ripple defaults.
+### Collapsible thoughts
 
-Hover is disabled on touch-only pointers. Reduced-motion preferences disable scaling and animation. Colour accents remain subtle; choose character colours that are legible on your theme.
+Click the top speaker label, or focus it and press Enter/Space, to collapse or expand a thought. Each message also has a **Collapse thoughts / Expand thoughts** button immediately below its token-count element. Mixed states collapse all on the next bulk click.
 
-## Collapsible thoughts
+- **Start new thought cards collapsed** controls the initial state of newly decorated thoughts. Existing choices are kept; reload the chat/page to apply the default to all thoughts.
+- **Collapse earlier messages after a new AI response** collapses thoughts in earlier messages after a changed AI response finishes generating. The latest response follows the default setting. Quiet/background generations, dry runs, and unchanged replies do not trigger it.
+- Disabling collapsible thoughts expands all cards and hides their collapse controls.
 
-Click the top speaker label, or focus it and press Enter/Space, to collapse or expand a thought. Collapsed cards show just the label. State lasts for the current chat session and survives message rerenders when message ID and text remain the same. It resets when switching chats or reloading. Turn off collapsible thoughts to expand all cards.
+Collapse choices are local to the current chat session and reset on chat switches or page reload. Identical thoughts with the same message ID share collapse state. If token-count text is hidden, the bulk button remains below its element. A theme that hides the entire avatar/info column also hides that button.
 
-### Collapse / expand all thoughts in one message
+### Appearance
 
-A Collapse thoughts button appears immediately below the message's token-count element whenever it has completed thought cards. Clicking it collapses every completed thought in that message; clicking Expand thoughts opens them all. If some thoughts are collapsed and some expanded, the next click collapses all. Individual speaker-label toggles keep the bulk button synchronized.
+Appearance controls are inside a closed-by-default **Appearance** submenu:
 
-The control follows the collapsible-thoughts setting and disappears when monologue styling or collapsibility is disabled. Newly completed thoughts start expanded. When token-count text is disabled, the button stays in the same location under its hidden element; a theme hiding the entire avatar/info column also hides the button. Existing collapse-state session behavior applies.
+| Setting | Range |
+| --- | --- |
+| Maximum thought width | 200–1200 px, constrained to message width |
+| Thought font size | 60–150% |
+| Background opacity | 0–60% |
+| Thought portrait width | 35–180 px, constrained on narrow screens |
+| Hover enlargement | 0–20% |
+| Corner radius | 0–30 px |
+| Full-message persona width, desktop/mobile | 0 uses Ripple defaults; 40–400 px overrides |
 
-## Wait for completion
+Hover applies to fine pointers. Reduced-motion preferences disable scaling and animation. Larger hover settings may overlap nearby text without changing the layout.
 
-HivePack checks the source message for explicit closing `</i>` tags. A browser-auto-closed unfinished thought stays undecorated until its closing tag arrives. Earlier completed thoughts may render while later text is still streaming. Stopping generation with an unclosed thought leaves it plain. If source text is unavailable, the current streaming message is left undecorated until streaming finishes.
+### Streaming
 
-## Limitations and removal
+HivePack waits for an explicit closing `</i>` in the source message before decorating a thought. Completed thoughts can render while the rest of a reply is still streaming. An unfinished thought remains plain, including when generation stops before its closing tag arrives.
 
-Uses standard SillyTavern message markup. Extensions that restructure message HTML or rewrite italic tags may interfere. Thought completion matching assumes normal, non-nested `<i>...</i>` tags in source order; use markdown emphasis inside thoughts instead of nested `<i>` tags. Only character cards already loaded by SillyTavern are recognized. HivePack does not infer identities from prose or partial names.
+## Compatibility and limitations
 
-Delete the HivePack folder and reload to uninstall. Global preferences and per-chat colour metadata may remain. Moonlit Echoes files are never edited.
+- Uses standard SillyTavern message markup and the current extension context APIs.
+- Other extensions or regexes that restructure message HTML or replace thought tags may interfere.
+- Use non-nested `<i>...</i>` thought tags. Markdown emphasis inside thoughts is supported.
+- User/system messages, code examples, and unnamed italics are not decorated.
+- Thought portraits crop to the bubble height with a Ripple-inspired fade.
+- HivePack does not edit model prompts, injections, or saved message content. Colour memory is stored separately in chat metadata.
+- Upload, list, and delete operations use SillyTavern's authenticated local image APIs.
+
+## Uninstall
+
+Remove HivePack through SillyTavern's extension manager and reload. Global settings, chat colour metadata, and uploaded photos may remain. Delete unwanted photos through the saved-photo browser before uninstalling.
 
 ## Validation
 
-JavaScript syntax, manifest, and DOM behavior were tested. See VALIDATION.txt for checks and limitations. Full-browser visual checks inside a running SillyTavern installation remain outstanding.
+Syntax, manifest, and DOM behavior have automated checks. Image API calls are tested with mocks against the inspected API contract. Full-browser layout checks and testing against a live SillyTavern instance remain outstanding. See [VALIDATION.txt](VALIDATION.txt).
 
-MIT license. Original companion code; no Moonlit Echoes source files bundled.
+## License
+
+MIT. Original companion code. No Moonlit Echoes or Megumin Suite source is bundled.
