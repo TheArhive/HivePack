@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.11.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.12.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -8,7 +8,7 @@ HivePack styles the chat display without rewriting saved messages. Optional mode
 
 1. Open **Extensions → Install extension** in SillyTavern.
 2. Paste `https://github.com/TheArhive/HivePack` and install.
-3. Refresh the page and open **Extensions → HivePack**.
+3. Refresh the page and click the hive button beside the message input to open the new settings panel. **Extensions → HivePack** remains available as a fallback.
 
 Update through SillyTavern’s extension manager, then refresh. Disable any old regex that replaces thought tags with HTML so HivePack can read the original `<i>` thoughts.
 
@@ -16,13 +16,29 @@ The right-side persona portrait requires [Moonlit Echoes Theme](https://github.c
 
 [Megumin Suite](https://github.com/Arif-salah/Megumin-Suite-Beta) is used in the original setup for coloured dialogue, but is **optional**. Your preset can handle dialogue colours, or you can use HivePack’s `<c>` feature below.
 
+## Settings panel and floating button
+
+The new dark gray and purple panel opens from the **hive button**, **magic wand menu → HivePack Settings**, or **Open HivePack panel** in the original extension drawer. Both settings interfaces share the same saved preferences. Unsaved portrait-override drafts stay local to their editor until **Add / replace override** is clicked.
+
+The rounded square hive button has a light purple gradient and starts immediately to the right of the text input, before the send controls. Drag it to a floating position; its location is remembered and kept inside the window when resized. Keyboard users can move the focused button with **Alt + arrow keys**. **General → Reset floating button position** docks it beside the input again.
+
+| Tab | Contents |
+| --- | --- |
+| General | Master enable, display toggles, generation timing, collapse behaviour, and launcher reset. |
+| Appearance | Layout, portraits, sampling methods, and colour priorities. |
+| Speakers | Aliases, portrait/colour overrides, saved overrides, and the speaker manager shortcut. |
+| Photos | Browse, reuse, upload, and delete saved portraits. |
+| Prompt | Optional prompt injection, placement/depth, editable instructions, and reset. |
+
+The live preview shows narration, coloured dialogue, a thought for the selected character, and a thought without an associated portrait. It updates as preferences change. On desktop the panel can be resized from its corner and remembers its size; on mobile it fills the screen. The original **Extensions → HivePack** controls remain available if needed.
+
 ## Model instructions / Author’s Note
 
 Use the optional injection controls to send instructions automatically, or add the manual examples below to your own Author’s Note.
 
 ### Automatic prompt injection
 
-Open **Extensions → HivePack → Prompt injection** at the very bottom of the settings. The section and its nested prompt editor start collapsed, and injection starts **off**.
+Open the new panel’s **Prompt** tab, or **Extensions → HivePack → Prompt injection** at the bottom of the fallback settings. The fallback section and the prompt editor start collapsed; injection starts **off**. In the new panel, the Prompt tab shows the placement controls directly.
 
 1. Enable **Inject HivePack model instructions**.
 2. Choose the placement mode.
@@ -92,7 +108,7 @@ The dialogue hover option is greyed out unless **Show persona beside full messag
 
 ## Colours and appearance
 
-Open the collapsible **Appearance** menu. Its live preview shows the active character’s portrait and demonstrates ordinary, bold, and quoted thought text.
+Open the **Appearance** tab, or the collapsible Appearance menu in the fallback drawer. The live preview shows the active character’s portrait, narration, dialogue, ordinary/bold/quoted thought text, and an unassigned speaker’s thought.
 
 ### Colour priority
 
@@ -158,7 +174,7 @@ HivePack treats an alias as the same speaker, sharing portrait overrides, colour
 
 ### Speaker manager and dialogue controls
 
-Open the **magic wand menu → HivePack Speaker Manager** to see speakers detected in the current chat’s completed dialogue and thought blocks. Aliases are grouped together. Each card shows the associated portrait, effective dialogue/thought colours and their sources, a **Portrait & colour** button, and an alias-target field. Leave the alias target blank and click **Save alias** to remove that speaker’s alias mapping. Changes share the same settings as the main HivePack panel.
+Open **magic wand menu → HivePack Speaker Manager**, or **Speakers → Open speaker manager**, to see speakers detected in the current chat’s completed dialogue and thought blocks. Aliases are grouped together. Each card shows the associated portrait, effective dialogue/thought colours and their sources, a **Portrait & colour** button, and an alias-target field. Leave the alias target blank and click **Save alias** to remove that speaker’s alias mapping. Changes share the same settings as the main HivePack panel.
 
 Click dialogue to open the same speaker controls used by thought portraits: a portrait viewer if the speaker has a photo, or the compact override editor if they do not. Dialogue is keyboard-focusable; Enter or Space opens its controls. Selecting text does not open an editor.
 
@@ -190,7 +206,7 @@ Open **Existing speaker overrides** to browse compact cards with portrait thumbn
 
 Click a thought portrait to open a larger view, scaled down to fit the browser without enlarging small images. Use Close, Escape, or the backdrop to dismiss it. Portraits and missing-portrait controls also support Enter/Space.
 
-The speaker’s name sits at the top left, above the portrait-selection buttons. The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The supplied SVG **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
+The speaker’s name sits at the top left, above the portrait-selection buttons. **Close** is centred below the image. The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The supplied SVG **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
 
 Click the fallback beside a thought without an image to open the compact override editor. Its selection and colour controls are centred, with a green-check save button at the bottom.
 
@@ -206,7 +222,7 @@ Click the fallback beside a thought without an image to open the compact overrid
 
 Click a thought’s top speaker label to collapse or expand it. Each message also has **Collapse thoughts / Expand thoughts** below its token count. If some thoughts are open and others closed, the next bulk click collapses them all.
 
-Collapse choices last for the chat session and reset on chat switches or page reload. Changing the initial collapsed setting affects new cards; reload to apply it throughout the chat. Identical thoughts in the same message share collapse state. Themes that hide the entire avatar/info column also hide the bulk button.
+Opening or switching to a chat collapses thoughts in older messages and expands every thought in the most recent message containing thoughts. This reopening rule takes precedence over the initial collapsed setting for that latest message. Afterward, manual collapse choices last for the chat session, and newly generated thoughts follow **Start new thought cards collapsed**. Switching or reopening the chat applies the reopening rule again. Identical thoughts in the same message share collapse state. Themes that hide the entire avatar/info column also hide the bulk button.
 
 Automatic collapse of older messages runs after a changed AI response finishes. Quiet/background generations, dry runs, and unchanged replies do not trigger it. The latest response follows the initial collapsed setting.
 
@@ -230,4 +246,4 @@ DOM regression tests cover formatting, colour sources, collapse controls, stream
 
 Remove HivePack through the extension manager and refresh. Settings, chat colour metadata, and uploaded photos may remain; delete unwanted photos through the photo browser before uninstalling.
 
-Code: MIT. No Moonlit Echoes or Megumin Suite source is bundled. The pipette SVG (SVG Repo) and silhouette PNG were supplied for HivePack and are bundled locally in `assets/`.
+Code: MIT. No Moonlit Echoes or Megumin Suite source is bundled. The pipette and hive SVGs (SVG Repo) and silhouette PNG were supplied for HivePack and are bundled locally in `assets/`.

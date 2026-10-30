@@ -1,6 +1,5 @@
-HivePack 1.11.0
+HivePack 1.12.0
 JavaScript module syntax check: passed.
 DOM regression suite: passed.
-New checks cover the magic-wand speaker manager, detected speakers and colour sources, shared alias edits, dialogue click-to-manage with/without photos, shared thought/dialogue hover, effective caption colours, no idle/lingering name, deterministic linger timers and cancellation, focus dimming and cleanup, supplied asset paths and PNG signature, and top-left portrait title. Existing regressions pass.
-Supplied silhouette PNG retained byte-for-byte; Git blob SHA verified against the original file.
-Formatter, image, prompt, and canvas APIs are mocked; hover timers use a deterministic test clock. Full live SillyTavern/browser visual testing has not been performed.
+New coverage: older thought messages collapse on opening/switching chats while the latest thought message expands; manual choices persist until reopening; portrait Close button is last and centred by CSS; wand entries use native div markup; new panel tabs, narration/dialogue/missing-portrait previews, shared controls with the retained fallback drawer, panel cleanup, remembered size, composer docking, pointer dragging/click suppression, relative-position persistence/clamping, reset, wand shortcut, and hive asset path. Existing regressions pass.
+Formatter/image/prompt/canvas APIs and viewport geometry are mocked. No browser executable is available for full visual testing; live SillyTavern/browser visual testing remains outstanding.

@@ -44,13 +44,13 @@ function addPromptSettings(area,save){
     for(const [value,label] of [['depth','Separate injection at depth'],['append',"Append after Author’s Note (in-chat only)"]]){const option=document.createElement('option');option.value=value;option.textContent=label;mode.append(option);}mode.value=settings().injectionMode;modeLabel.append(mode);section.append(modeLabel);
     const depthLabel=document.createElement('label');depthLabel.textContent='Injection depth (0 = most recent end of chat)';const depth=document.createElement('input');depth.type='number';depth.className='text_pole';depth.dataset.rpp='injectionDepth';depth.min=0;depth.max=MAX_INJECTION_DEPTH;depth.step=1;depth.value=settings().injectionDepth;depthLabel.append(depth);section.append(depthLabel);
     const help=document.createElement('small');help.textContent="Off by default. Separate mode sends a system instruction at your chosen depth. Append mode follows an active in-chat Author’s Note’s depth, role, and interval; it does not edit the saved note. If that note is disabled or placed outside chat, append mode sends nothing. Remove duplicate manual instructions when enabling this.";section.append(help);
-    const editor=document.createElement('details');editor.className='hp-prompt-editor';const editorTitle=document.createElement('summary');editorTitle.textContent='Edit model instructions';const text=document.createElement('textarea');text.className='text_pole';text.rows=12;text.value=settings().instructionPrompt;text.setAttribute('aria-label','HivePack model instructions');
+    const editor=document.createElement('details');editor.className='hp-prompt-editor';const editorTitle=document.createElement('summary');editorTitle.textContent='Edit model instructions';const text=document.createElement('textarea');text.className='text_pole';text.rows=12;text.dataset.rpp='instructionPrompt';text.value=settings().instructionPrompt;text.setAttribute('aria-label','HivePack model instructions');
     const reset=action('Reset to default',()=>{text.value=DEFAULT_INSTRUCTION;settings().instructionPrompt=DEFAULT_INSTRUCTION;save();});editor.append(editorTitle,text,reset);section.append(editor);area.append(section);
     const state=()=>{depth.disabled=mode.value==='append';};state();
     toggle.addEventListener('change',()=>{settings().promptEnabled=toggle.checked;save();});mode.addEventListener('change',()=>{settings().injectionMode=mode.value;state();save();});depth.addEventListener('input',()=>{settings().injectionDepth=injectionDepth(depth.value);save();});depth.addEventListener('change',()=>{depth.value=settings().injectionDepth;});text.addEventListener('input',()=>{settings().instructionPrompt=text.value;save();});
     if(typeof context().setExtensionPrompt!=='function'||!context().extensionPrompts){toggle.disabled=true;help.textContent='Prompt injection is unavailable: this SillyTavern version does not expose the extension prompt API.';}
 }
-const defaults = { portraitLinger: 500, speakerFocus: true, promptEnabled: false, injectionMode: 'depth', injectionDepth: 4, instructionPrompt: DEFAULT_INSTRUCTION, masterEnabled: true, afterGeneration: false, samplingMethod: 'average', enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble', dialogueColours: true, dialoguePortraitHover: false, dialoguePriority: ['override','model','photo'] };
+const defaults = { launcherPosition: null, panelSize: null, portraitLinger: 500, speakerFocus: true, promptEnabled: false, injectionMode: 'depth', injectionDepth: 4, instructionPrompt: DEFAULT_INSTRUCTION, masterEnabled: true, afterGeneration: false, samplingMethod: 'average', enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble', dialogueColours: true, dialoguePortraitHover: false, dialoguePriority: ['override','model','photo'] };
 let queued = false;
 let revision = 0;
 let lastAvatar;
@@ -70,7 +70,7 @@ function schedule() {
 }
 function refresh() {
     const s = settings();
-    syncPromptInjection();addSpeakerManagerButton();
+    syncPromptInjection();addSpeakerManagerButton();ensureSettingsLauncher();
     if (user_avatar !== lastAvatar) {
         lastAvatar = user_avatar;
         revision++;
@@ -79,7 +79,7 @@ function refresh() {
         if (avatarUrl) avatarUrl += `?rpp=${revision}`;
     }
     refreshSpeakerManager();
-    const previewHost=document.querySelector('.hp-preview');if(previewHost)previewHost.hidden=!s.masterEnabled;
+    document.querySelectorAll('.hp-preview').forEach(preview=>{preview.hidden=!s.masterEnabled;});
     if(!s.masterEnabled){
         clearAllSpeakerHovers();restoreThoughts(document);document.querySelectorAll('#chat .mes_text').forEach(unwrapDialogue);
         document.querySelectorAll('#chat .rpp-column,#chat .hp-toggle-message-thoughts').forEach(node=>node.remove());for(const name of ['rpp-enabled','hivepack-hover'])if(document.body.classList.contains(name))document.body.classList.remove(name);return;
@@ -218,8 +218,7 @@ function decorateDialogue(holder,source,s){
     dialogueRender.set(holder,{signature,text:holder.textContent,count:holder.querySelectorAll('.hp-dialogue').length});
 }
 function refreshDialogue(s){
-    const hoverToggle=document.querySelector('[data-rpp="dialoguePortraitHover"]');
-    if(hoverToggle){hoverToggle.disabled=!s.enabled;hoverToggle.closest('label').classList.toggle('hp-setting-disabled',!s.enabled);hoverToggle.title=s.enabled?'Show the dialogue speaker in the right-side Ripple portrait while hovering':'Enable Show persona beside full messages first';}
+    document.querySelectorAll('[data-rpp="dialoguePortraitHover"]').forEach(hoverToggle=>{hoverToggle.disabled=!s.enabled;hoverToggle.closest('label').classList.toggle('hp-setting-disabled',!s.enabled);hoverToggle.title=s.enabled?'Show the hovered dialogue or thought speaker in the right-side Ripple portrait':'Enable Show persona beside full messages first';});
     document.querySelectorAll('#chat > .mes[is_user="false"]:not([is_system="true"])').forEach(mes=>{
         const holder=mes.querySelector('.mes_text'),id=Number(mes.getAttribute('mesid')),message=context().chat?.[id];if(!holder||!message)return;
         const source=message.mes;if(typeof source!=='string'||s.afterGeneration&&messageIsGenerating(mes))return;
@@ -292,6 +291,7 @@ function refreshMonologues(s) {
         originals.set(card, italic);
         italic.replaceWith(card);
     });
+    if(reopenLatestThought===null && context().chat?.length)reopenLatestThought=context().chat.findLastIndex(message=>!message.is_user&&!message.is_system&&rawThoughts(message.mes).some(thought=>/^\s*[^:\n]+?\s*:/.test(thought[1])));
     document.querySelectorAll('#chat .hp-monologue').forEach(card => {
         if(s.afterGeneration&&messageIsGenerating(card.closest('.mes')))return;
         bindSpeakerHover(card);applyThoughtColour(card, s);
@@ -312,7 +312,7 @@ function normalizedName(name) {
     return String(name ?? '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 function updateThoughtPortrait(card, s) {
-    const src = s.thoughtPortraits ? resolvePortrait(card.dataset.hpSpeaker, s) : '';
+    const src = s.thoughtPortraits && !card.dataset.hpPreviewMissing ? resolvePortrait(card.dataset.hpSpeaker, s) : '';
     let portrait = card.querySelector(':scope > .hp-thought-portrait');
     if (!src) {
         portrait?.remove();
@@ -480,6 +480,7 @@ function learnColours(s) {
 let savedColourSignature = '';
 const collapsedThoughts = new Set();
 const knownThoughts = new Set();
+let reopenLatestThought=null;
 let autoCollapseBefore = -1;
 let generationSnapshot = null;
 function toggleThought(card) {
@@ -496,7 +497,8 @@ function updateCollapse(card,s) {
         const mes = card.closest('.mes');
         const rawId = mes?.getAttribute('mesid');
         const id = rawId === null ? NaN : Number(rawId);
-        if (s.defaultCollapsed || (s.autoCollapsePrevious && Number.isFinite(id) && id < autoCollapseBefore)) collapsedThoughts.add(key);
+        if(Number.isFinite(id)&&reopenLatestThought!==null&&reopenLatestThought>=0&&id<=reopenLatestThought){if(id<reopenLatestThought||s.autoCollapsePrevious&&id<autoCollapseBefore)collapsedThoughts.add(key);else collapsedThoughts.delete(key);}
+        else if (s.defaultCollapsed || (s.autoCollapsePrevious && Number.isFinite(id) && id < autoCollapseBefore)) collapsedThoughts.add(key);
     }
     const collapsed = s.collapsible && collapsedThoughts.has(key);
     card.classList.toggle('hp-collapsed',Boolean(collapsed));
@@ -611,7 +613,7 @@ function openPortraitViewer(src,title='Portrait') {
         }catch(failure){help.textContent=failure.message;}
     });
     img.addEventListener('error',()=>{img.hidden=true;error.hidden=false;pipette.disabled=true;});
-    view.content.append(toolbar,help,img,error);
+    const close=view.dialog.querySelector('.hp-viewer-close');close.classList.add('hp-portrait-bottom-close');view.dialog.querySelector('.hp-popup-header').remove();view.content.append(toolbar,help,img,error,close);
 }
 async function listPortraitPhotos() {
     const response=await fetch('/api/images/list',{method:'POST',headers:context().getRequestHeaders(),body:JSON.stringify({folder:'HivePack',sortField:'date',sortOrder:'desc'})});
@@ -777,7 +779,7 @@ function createPopup(title,className='hp-picker-dialog'){
     const header=document.createElement('div');header.className='hp-popup-header';const label=document.createElement('b');label.textContent=title;
     const content=document.createElement('div');content.className='hp-popup-content';
     let closed=false;
-    const cleanup=()=>{if(closed)return;closed=true;document.removeEventListener('keydown',escape);dialog.querySelectorAll('.hp-override-editor').forEach(editor=>editor.hpCleanup?.());dialog.remove();if(origin?.isConnected)origin.focus?.();};
+    const cleanup=()=>{if(closed)return;closed=true;document.removeEventListener('keydown',escape);dialog.querySelectorAll('.hp-override-editor').forEach(editor=>editor.hpCleanup?.());dialog.hpCleanup?.();dialog.remove();if(origin?.isConnected)origin.focus?.();};
     const close=()=>{if(typeof dialog.close==='function' && dialog.open)dialog.close();cleanup();};
     const closeButton=action('Close',close);closeButton.classList.add('hp-viewer-close');
     const escape=e=>{if(e.key==='Escape' && document.querySelector('dialog:last-of-type')===dialog){e.preventDefault();close();}};
@@ -894,14 +896,13 @@ function openOverrideDialog(speaker,mode='all',initialOverride=null){
     if(mode==='upload')editor.querySelector('input[type="file"]').click();
     if(mode==='card')editor.querySelector('select').focus();
 }
-let previewElement=null;
 function refreshLivePreview(){
-    if(!previewElement?.isConnected)return;
-    const s=settings(),c=context();previewElement.dataset.hpSpeaker=c.name2||c.name1||'Preview';previewElement.dataset.hpExplicitColour='#9BD4A8';
-    previewElement.querySelector('.hp-monologue-name').textContent=`◈ ${previewElement.dataset.hpSpeaker}`;
-    previewElement.querySelector('.hp-monologue-footer').textContent=`◈ ${previewElement.dataset.hpSpeaker}`;
-    applyThoughtColour(previewElement,s);applyAlignment(previewElement,s);updateThoughtPortrait(previewElement,s);
-    previewElement.classList.remove('hp-collapsed');
+    const s=settings(),c=context();document.querySelectorAll('.hp-preview').forEach(preview=>{
+        const primary=preview.querySelector('.hp-preview-primary');if(!primary)return;const name=c.name2||c.name1||'Preview';primary.dataset.hpSpeaker=name;primary.dataset.hpExplicitColour='#9BD4A8';
+        primary.querySelector('.hp-monologue-name').textContent=`◈ ${name}`;primary.querySelector('.hp-monologue-footer').textContent=`◈ ${name}`;
+        const dialogue=preview.querySelector('.hp-preview-dialogue');if(!dialogue.querySelector('.hp-preview-spoken'))dialogue.innerHTML='<span class="hp-preview-spoken">“We should take a closer look,”</span> <span class="hp-preview-attribution"></span>';dialogue.querySelector('.hp-preview-attribution').textContent=name+' said.';const colour=resolveDialogueColour(name,'#9BD4A8',s).colour;dialogue.querySelector('.hp-preview-spoken').style.color=s.dialogueColours?(colour||'inherit'):'inherit';
+        preview.querySelectorAll('.hp-monologue').forEach(card=>{applyThoughtColour(card,s);applyAlignment(card,s);updateThoughtPortrait(card,s);card.classList.remove('hp-collapsed');});preview.hidden=!s.masterEnabled;
+    });
 }
 let speakerManager=null;
 function detectedSpeakers(){
@@ -921,20 +922,66 @@ function refreshSpeakerManager(){
         if(row.dialogue){const label=document.createElement('span');label.textContent=`Dialogue: ${row.dialogue.colour||'Default'} (${source[row.dialogue.source]})`;label.style.color=row.dialogue.colour||'';colours.append(label);}
         if(row.thought){const label=document.createElement('span');label.textContent=`Thought: ${row.thoughtColour||'Default'} (${source[row.thoughtSource]})`;label.style.color=row.thoughtColour||'';colours.append(label);}
         const manage=action('Portrait & colour',()=>openSpeaker(row.name));const alias=document.createElement('input');alias.className='text_pole';alias.value=row.alias;alias.placeholder='Alias of (speaker name)';alias.setAttribute('aria-label',`Alias target for ${row.name}`);
-        const saveAlias=action('Save alias',()=>{const target=alias.value.trim();if(normalizedName(target)===normalizedName(row.name)){alias.setCustomValidity?.('Choose another speaker, or leave blank to remove the alias.');alias.reportValidity?.();return;}alias.setCustomValidity?.('');const lines=String(settings().aliases).split('\n').filter(line=>normalizedName(line.split('=')[0])!==normalizedName(row.name));if(target)lines.push(`${row.name} = ${target}`);settings().aliases=lines.filter(x=>x.trim()).join('\n');const field=document.querySelector('[data-rpp="aliases"]');if(field)field.value=settings().aliases;context().saveSettingsDebounced();notifyOverrides();schedule();});
+        const saveAlias=action('Save alias',()=>{const target=alias.value.trim();if(normalizedName(target)===normalizedName(row.name)){alias.setCustomValidity?.('Choose another speaker, or leave blank to remove the alias.');alias.reportValidity?.();return;}alias.setCustomValidity?.('');const lines=String(settings().aliases).split('\n').filter(line=>normalizedName(line.split('=')[0])!==normalizedName(row.name));if(target)lines.push(`${row.name} = ${target}`);settings().aliases=lines.filter(x=>x.trim()).join('\n');document.querySelectorAll('[data-rpp="aliases"]').forEach(field=>{field.value=settings().aliases;});context().saveSettingsDebounced();notifyOverrides();schedule();});
         card.append(portrait,name,variants,colours,manage,alias,saveAlias);grid.append(card);
     }
 }
 function openSpeakerManager(){speakerManager?.popup.close();const popup=createPopup('HivePack Speaker Manager','hp-picker-dialog hp-speaker-manager');const status=document.createElement('p'),grid=document.createElement('div');grid.className='hp-speaker-grid';popup.content.append(status,grid);speakerManager={popup,status,grid,signature:null};refreshSpeakerManager();}
-function addSpeakerManagerButton(){const menu=document.getElementById('extensionsMenu');if(!menu||document.getElementById('hp-speaker-manager-button'))return;const button=action('',openSpeakerManager);button.id='hp-speaker-manager-button';button.className='list-group-item flex-container flexGap5';const icon=document.createElement('i');icon.className='fa-solid fa-users extensionsMenuExtensionButton';const label=document.createElement('span');label.textContent='HivePack Speaker Manager';button.append(icon,label);menu.append(button);}
+function addSpeakerManagerButton(){
+    const menu=document.getElementById('extensionsMenu');if(!menu)return;
+    for(const [id,label,iconClass,callback] of [['hp-speaker-manager-button','HivePack Speaker Manager','fa-users',openSpeakerManager],['hp-settings-menu-button','HivePack Settings','fa-sliders',openModernSettings]]){
+        if(document.getElementById(id))continue;const entry=document.createElement('div');entry.id=id;entry.className='list-group-item flex-container flexGap5 hp-wand-entry';entry.setAttribute('role','button');entry.setAttribute('tabindex','0');entry.addEventListener('click',callback);entry.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();callback();}});const icon=document.createElement('i');icon.className='fa-solid '+iconClass+' extensionsMenuExtensionButton';const text=document.createElement('span');text.textContent=label;entry.append(icon,text);menu.append(entry);
+    }
+}
 
-function addSettings(){
-    const host=document.querySelector('#extensions_settings');if(!host||document.getElementById('hivepack-settings'))return;
-    const panel=document.createElement('div');panel.id='hivepack-settings';panel.className='extension_container';
+const settingsViews=new Set();
+let modernSettings=null,launcherDrag=null;
+function syncSettingsForms(){const s=settings();document.querySelectorAll('[data-rpp]').forEach(field=>{const key=field.dataset.rpp;if(!(key in s)||document.activeElement===field)return;if(field.type==='checkbox')field.checked=Boolean(s[key]);else if(typeof s[key]!=='object')field.value=s[key];if(key==='injectionDepth')field.disabled=s.injectionMode==='append';if(key==='dialoguePortraitHover')field.disabled=!s.enabled;});}
+function viewportSize(){return {width:window.innerWidth||1024,height:window.innerHeight||768};}
+function placeLauncher(button){
+    const position=settings().launcherPosition,box=viewportSize();if(position){button.style.right='auto';button.style.bottom='auto';if(button.parentElement!==document.body)document.body.append(button);button.classList.add('hp-launcher-floating');button.style.left=`${Math.max(6,Math.min(box.width-50,Number(position.x)*(box.width-44)))}px`;button.style.top=`${Math.max(6,Math.min(box.height-50,Number(position.y)*(box.height-44)))}px`;}
+    else {button.classList.remove('hp-launcher-floating');button.style.removeProperty('left');button.style.removeProperty('top');button.style.removeProperty('right');button.style.removeProperty('bottom');const input=document.getElementById('send_textarea');if(input&&input.nextElementSibling!==button)input.after(button);else if(!input){if(button.parentElement!==document.body)document.body.append(button);button.classList.add('hp-launcher-floating');button.style.right='18px';button.style.bottom='88px';}}
+}
+function saveLauncherPosition(button){const rect=button.getBoundingClientRect(),box=viewportSize();settings().launcherPosition={x:Math.max(0,Math.min(1,rect.left/Math.max(1,box.width-44))),y:Math.max(0,Math.min(1,rect.top/Math.max(1,box.height-44)))};context().saveSettingsDebounced();}
+function ensureSettingsLauncher(){
+    let button=document.getElementById('hp-settings-launcher');if(button){if(!launcherDrag)placeLauncher(button);return;}
+    button=action('',()=>{if(button.hpSkipClick){button.hpSkipClick=false;return;}openModernSettings();});button.id='hp-settings-launcher';button.setAttribute('aria-label','Open HivePack settings');button.title='HivePack settings. Drag to move; Alt + arrow keys to reposition.';const icon=document.createElement('img');icon.src=assetUrl('hive.svg');icon.alt='';button.append(icon);
+    button.addEventListener('pointerdown',event=>{if(event.button!==0)return;const rect=button.getBoundingClientRect();launcherDrag={id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top,moved:false};button.hpSkipClick=false;button.setPointerCapture?.(event.pointerId);});
+    button.addEventListener('pointermove',event=>{const drag=launcherDrag;if(!drag||drag.id!==event.pointerId)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;if(!drag.moved&&Math.hypot(dx,dy)<5)return;drag.moved=true;button.hpSkipClick=true;const box=viewportSize();if(button.parentElement!==document.body)document.body.append(button);button.setPointerCapture?.(event.pointerId);button.classList.add('hp-launcher-floating');button.style.right='auto';button.style.bottom='auto';button.style.left=`${Math.max(6,Math.min(box.width-50,drag.left+dx))}px`;button.style.top=`${Math.max(6,Math.min(box.height-50,drag.top+dy))}px`;event.preventDefault();});
+    const finish=event=>{if(!launcherDrag||launcherDrag.id!==event.pointerId)return;const moved=launcherDrag.moved;launcherDrag=null;if(moved)saveLauncherPosition(button);button.releasePointerCapture?.(event.pointerId);};button.addEventListener('pointerup',finish);button.addEventListener('pointercancel',finish);
+    button.addEventListener('keydown',event=>{if(event.altKey&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();const rect=button.getBoundingClientRect(),box=viewportSize();settings().launcherPosition={x:Math.max(0,Math.min(1,(rect.left+(event.key==='ArrowRight'?10:event.key==='ArrowLeft'?-10:0))/Math.max(1,box.width-44))),y:Math.max(0,Math.min(1,(rect.top+(event.key==='ArrowDown'?10:event.key==='ArrowUp'?-10:0))/Math.max(1,box.height-44)))};context().saveSettingsDebounced();placeLauncher(button);}});
+    window.addEventListener('resize',()=>{if(!launcherDrag)placeLauncher(button);});placeLauncher(button);
+}
+function openModernSettings(){
+    if(modernSettings?.dialog.isConnected){modernSettings.dialog.focus();return;}
+    const popup=createPopup('HivePack settings','hp-modern-dialog');modernSettings=popup;
+    const brand=popup.dialog.querySelector('.hp-popup-header b');brand.className='hp-modern-brand';const logo=document.createElement('img');logo.src=assetUrl('hive.svg');logo.alt='';brand.prepend(logo);
+    const shell=document.createElement('div');shell.className='hp-modern-shell';const navigation=document.createElement('nav');navigation.className='hp-modern-nav';navigation.setAttribute('aria-label','HivePack settings sections');const main=document.createElement('div');main.className='hp-modern-main';const aside=document.createElement('aside');aside.className='hp-modern-preview';const previewTitle=document.createElement('b');previewTitle.textContent='Live preview';const previewHint=document.createElement('p');previewHint.textContent='Narration, dialogue, and thoughts';aside.append(previewTitle,previewHint);shell.append(navigation,main,aside);popup.content.append(shell);
+    const host=document.createElement('div');main.append(host);const controls=addSettings(host,true),area=controls.querySelector('.hp-settings-content'),tabs=new Map();
+    for(const [id,title] of [['general','General'],['appearance','Appearance'],['speakers','Speakers'],['photos','Photos'],['prompt','Prompt']]){const page=document.createElement('section');page.className='hp-settings-page';page.id=`hp-page-${id}`;page.setAttribute('role','tabpanel');const heading=document.createElement('h2');heading.textContent=title;page.append(heading);main.append(page);const tab=action(title,()=>activate(id));tab.setAttribute('role','tab');tab.setAttribute('aria-controls',page.id);tab.id=`hp-tab-${id}`;page.setAttribute('aria-labelledby',tab.id);navigation.append(tab);tabs.set(id,{tab,page});}
+    navigation.setAttribute('role','tablist');navigation.setAttribute('aria-orientation','vertical');
+    function activate(id){for(const [key,{tab,page}] of tabs){page.hidden=key!==id;tab.setAttribute('aria-selected',String(key===id));tab.tabIndex=key===id?0:-1;}settings().lastSettingsTab=id;}
+    navigation.addEventListener('keydown',event=>{const keys=[...tabs.keys()],current=keys.indexOf(settings().lastSettingsTab);if(['ArrowDown','ArrowRight','ArrowUp','ArrowLeft','Home','End'].includes(event.key)){event.preventDefault();const index=event.key==='Home'?0:event.key==='End'?keys.length-1:(current+(['ArrowDown','ArrowRight'].includes(event.key)?1:keys.length-1))%keys.length;activate(keys[index]);tabs.get(keys[index]).tab.focus();}});
+    for(const child of [...area.children]){const group=child.matches('.hp-master-toggle,.hp-checkbox-grid')?'general':child.matches('.hp-appearance')?'appearance':child.matches('.hp-prompt-settings')?'prompt':'speakers';tabs.get(group).page.append(child);}
+    const appearance=tabs.get('appearance').page.querySelector('.hp-appearance');appearance.open=true;appearance.querySelector('summary').hidden=true;const preview=appearance.querySelector('.hp-preview');const title=preview.previousElementSibling;if(title?.textContent==='Live styling preview')title.remove();aside.append(preview);const off=document.createElement('p');off.className='hp-preview-off';off.textContent='Enable HivePack to show the preview.';aside.append(off);
+    const prompt=tabs.get('prompt').page.querySelector('.hp-prompt-settings');prompt.open=true;prompt.querySelector('summary').hidden=true;
+    const general=tabs.get('general').page;general.append(action('Reset floating button position',()=>{settings().launcherPosition=null;context().saveSettingsDebounced();const button=document.getElementById('hp-settings-launcher');button.style.right='';button.style.bottom='';placeLauncher(button);}));
+    tabs.get('speakers').page.insertBefore(action('Open speaker manager',openSpeakerManager),tabs.get('speakers').page.children[1]||null);
+    const photos=tabs.get('photos').page,photoHelp=document.createElement('p');photoHelp.textContent='Browse, reuse, or delete saved portraits. Choose a photo to assign it to a speaker.';photos.append(photoHelp,action('Browse saved photos',()=>openSavedPhotoPicker(image=>openOverrideDialog('','all',{image,scope:''}))),action('Upload a photo for a speaker',()=>openOverrideDialog('','upload')));
+    const size=settings().panelSize;if(size){popup.dialog.style.width=`${Math.min(viewportSize().width*.96,Math.max(600,size.width))}px`;popup.dialog.style.height=`${Math.min(viewportSize().height*.94,Math.max(420,size.height))}px`;}
+    let panelBounds=popup.dialog.getBoundingClientRect();const rememberSize=()=>{const rect=popup.dialog.getBoundingClientRect();if(rect.width>0&&rect.height>0)panelBounds={width:rect.width,height:rect.height};};popup.dialog.addEventListener('pointerup',rememberSize);const observer=typeof ResizeObserver!=='undefined'?new ResizeObserver(rememberSize):null;observer?.observe(popup.dialog);
+    popup.dialog.hpCleanup=()=>{controls.hpCleanup?.();rememberSize();observer?.disconnect();if(panelBounds.width>0&&panelBounds.height>0){settings().panelSize={width:panelBounds.width,height:panelBounds.height};context().saveSettingsDebounced();}modernSettings=null;};
+    activate(tabs.has(settings().lastSettingsTab)?settings().lastSettingsTab:'general');syncSettingsForms();refreshLivePreview();
+}
+
+function addSettings(target=null,modern=false){
+    const host=target||document.querySelector('#extensions_settings'),id=modern?'hp-modern-controls':'hivepack-settings';if(!host||document.getElementById(id))return;
+    const panel=document.createElement('div');panel.id=id;panel.className='extension_container';
     panel.innerHTML='<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>HivePack</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content hp-settings-content"></div></div>';
+    if(modern)panel.innerHTML='<div class="hp-settings-content"></div>';
     const area=panel.querySelector('.hp-settings-content');
-    const save=()=>{context().saveSettingsDebounced();schedule();};
-    const master=document.createElement('label');master.className='checkbox_label hp-master-toggle';const masterInput=document.createElement('input');masterInput.type='checkbox';masterInput.dataset.rpp='masterEnabled';masterInput.checked=settings().masterEnabled;master.append(masterInput,document.createTextNode('Enable HivePack'));masterInput.addEventListener('change',()=>{settings().masterEnabled=masterInput.checked;save();});area.append(master);
+    const save=()=>{context().saveSettingsDebounced();syncSettingsForms();for(const refresh of settingsViews)refresh();schedule();};
+    const master=document.createElement('label');master.className='checkbox_label hp-master-toggle';const masterInput=document.createElement('input');masterInput.type='checkbox';masterInput.dataset.rpp='masterEnabled';masterInput.checked=settings().masterEnabled;master.append(masterInput,document.createTextNode('Enable HivePack'));masterInput.addEventListener('change',()=>{settings().masterEnabled=masterInput.checked;save();});area.append(master);if(!modern){const open=action('Open HivePack panel',openModernSettings);open.classList.add('hp-open-modern');area.append(open);}
     const checks=document.createElement('div');checks.className='hp-checkbox-grid';area.append(checks);
     for(const [key,title] of Object.entries({speakerFocus:'Dim other text when hovering a speaker',afterGeneration:'Apply styling after generation finishes (prevents flashing)',monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',samplePortrait:'Sample portrait colour',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)',dialogueColours:'Colour character dialogue (<c>)',dialoguePortraitHover:'Show hovered speaker portrait (dialogue and thoughts, Ripple only)'})){
         const label=document.createElement('label');label.className='checkbox_label';const input=document.createElement('input');input.type='checkbox';input.dataset.rpp=key;input.checked=Boolean(settings()[key]);label.append(input,document.createTextNode(title));input.addEventListener('change',()=>{settings()[key]=input.checked;save();});checks.append(label);
@@ -974,9 +1021,9 @@ function addSettings(){
     }renderDialoguePriority();
     const previewTitle=document.createElement('b');previewTitle.textContent='Live styling preview';appearance.append(previewTitle);
     const preview=document.createElement('div');preview.className='hp-preview';preview.innerHTML='<span class="hp-monologue"><span class="hp-monologue-content"><span class="hp-monologue-name"></span><span class="hp-monologue-body">An ordinary thought, <strong>an important detail</strong>, and <span class="hp-quote">“a remembered voice.”</span></span><span class="hp-monologue-name hp-monologue-footer"></span></span></span>';
-    previewElement=preview.querySelector('.hp-monologue');appearance.append(preview);
-    const aliasesLabel=document.createElement('label');aliasesLabel.textContent='Aliases: one Alias = Character Name per line';const aliases=document.createElement('textarea');aliases.className='text_pole';aliases.dataset.rpp='aliases';aliases.rows=4;aliases.value=settings().aliases;aliases.placeholder='Appy = Apothos';aliases.addEventListener('change',()=>{settings().aliases=aliases.value;save();});aliasesLabel.append(aliases);area.append(aliasesLabel);const aliasHelp=document.createElement('small');aliasHelp.textContent='HivePack treats an alias as the same speaker, sharing portrait overrides, colour overrides, and remembered colours.';area.append(aliasHelp);
-    const heading=document.createElement('b');heading.textContent='Speaker portrait and colour overrides';area.append(heading);
+    preview.innerHTML='<p class="hp-preview-narration">The corridor grows quiet. A lantern flickers beyond the door.</p><p class="hp-preview-dialogue"></p>'+preview.innerHTML+'<span class="hp-monologue hp-preview-missing" data-hp-preview-missing="true" data-hp-speaker="Unassigned speaker" data-hp-explicit-colour="#BD9BEA"><span class="hp-monologue-content"><span class="hp-monologue-name">◈ Unassigned speaker</span><span class="hp-monologue-body">This thought has no associated portrait.</span><span class="hp-monologue-name hp-monologue-footer">◈ Unassigned speaker</span></span></span>';preview.querySelector('.hp-monologue').classList.add('hp-preview-primary');appearance.append(preview);
+    const aliasesLabel=document.createElement('label');aliasesLabel.className='hp-aliases-label';aliasesLabel.textContent='Aliases: one Alias = Character Name per line';const aliases=document.createElement('textarea');aliases.className='text_pole';aliases.dataset.rpp='aliases';aliases.rows=4;aliases.value=settings().aliases;aliases.placeholder='Appy = Apothos';aliases.addEventListener('change',()=>{settings().aliases=aliases.value;save();});aliasesLabel.append(aliases);area.append(aliasesLabel);const aliasHelp=document.createElement('small');aliasHelp.className='hp-alias-help';aliasHelp.textContent='HivePack treats an alias as the same speaker, sharing portrait overrides, colour overrides, and remembered colours.';area.append(aliasHelp);
+    const heading=document.createElement('b');heading.className='hp-overrides-heading';heading.textContent='Speaker portrait and colour overrides';area.append(heading);
     const editor=buildOverrideEditor();area.append(editor);
     const saved=document.createElement('details');saved.className='hp-saved-overrides';const savedTitle=document.createElement('summary');savedTitle.textContent='Existing speaker overrides';saved.append(savedTitle);const rows=document.createElement('div');rows.className='hp-override-list';saved.append(rows);area.append(saved);
     function renderOverrides(){
@@ -995,7 +1042,7 @@ function addSettings(){
             const edit=action('Edit',()=>openOverrideDialog(item.name,'all',item));const remove=action('Remove',()=>{settings().overrides=settings().overrides.filter(x=>x!==item);context().saveSettingsDebounced();notifyOverrides();schedule();});row.append(name,picker,disable,scope,edit,remove);rows.append(row);
         }
     }
-    addPromptSettings(area,save);overrideListeners.add(renderOverrides);host.append(panel);renderOverrides();
+    addPromptSettings(area,save);const refreshView=()=>{if(panel.isConnected){renderPriority();renderDialoguePriority();renderOverrides();}};settingsViews.add(refreshView);panel.hpCleanup=()=>{settingsViews.delete(refreshView);overrideListeners.delete(renderOverrides);editor.hpCleanup?.();};overrideListeners.add(renderOverrides);host.append(panel);renderOverrides();return panel;
 }
 
 function init() {
@@ -1022,7 +1069,7 @@ function init() {
     for (const name of ['CHAT_CHANGED', 'CHARACTER_MESSAGE_RENDERED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'PERSONA_CHANGED', 'PERSONA_UPDATED', 'GENERATION_ENDED', 'GENERATION_STOPPED', 'STREAM_TOKEN_RECEIVED', 'CHARACTER_EDITED']) {
         if (events[name]) c.eventSource.on(events[name], () => {
             if(name==='GENERATION_STOPPED'){activeGeneration=null;if(context().streamingProcessor)endedProcessors.add(context().streamingProcessor);}
-            if (name === 'CHAT_CHANGED') { clearAllSpeakerHovers(); collapsedThoughts.clear();knownThoughts.clear();autoCollapseBefore=-1;generationSnapshot=null;activeGeneration=null;savedColourSignature=''; }
+            if (name === 'CHAT_CHANGED') { clearAllSpeakerHovers(); collapsedThoughts.clear();knownThoughts.clear();reopenLatestThought=null;autoCollapseBefore=-1;generationSnapshot=null;activeGeneration=null;savedColourSignature=''; }
             if (name==='CHARACTER_EDITED') photoColours.clear();
             if (['CHAT_CHANGED','CHARACTER_EDITED'].includes(name)) notifyOverrides();
             if (name.startsWith('PERSONA_')) lastAvatar = undefined;
