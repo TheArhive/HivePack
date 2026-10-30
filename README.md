@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.16.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.17.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -27,7 +27,7 @@ The rounded square hive button has a cream-centred honey-orange gradient and sta
 | General | Large green/gray power switch, compact toggle columns, generation timing, collapse behaviour, and launcher reset. |
 | Appearance | Compact layout columns, portraits, sampling methods, and animated colour-priority lists. |
 | Current Speakers | Speakers detected in the open chat, with up to 25 cards per page. |
-| All Speakers | Remembered speakers, overrides, and aliases, with up to 25 cards per page; expand Add speaker overrides & aliases for manual configuration. |
+| Overrides | Saved speaker overrides, with portrait previews, scope labels, editing and deletion, up to 25 per page. Expand Add speaker overrides & aliases for manual configuration. |
 | Photos | Embedded gallery with preview, pagination, upload, refresh, reuse, and deletion. |
 | Prompt | Optional prompt injection, placement/depth, editable instructions, and reset. |
 
@@ -178,7 +178,7 @@ HivePack treats an alias as the same speaker, sharing portrait overrides, colour
 
 ### Speaker manager and dialogue controls
 
-Open **Current Speakers** to see speakers detected in the current chat’s completed dialogue and thought blocks. Open **All Speakers** for speakers remembered from chats you have opened, plus names in configured overrides and aliases. Both views have Previous/Next controls and display at most 25 cards per page. HivePack does not scan unopened chat files; its persistent speaker history grows as you use it. Portraits, effective colours, and edits use the currently selected character’s override scope. Aliases are grouped together. Each card shows the associated portrait, effective dialogue/thought colours and their sources, a **Portrait & colour** button, and an alias-target field. Leave the alias target blank and click **Save alias** to remove that speaker’s alias mapping. Changes share the same settings as the main HivePack panel.
+Open **Current Speakers** to see speakers detected in the current chat’s completed dialogue and thought blocks. Open **Overrides** to browse saved speaker assignments, including global and character-specific entries. Both views display at most 25 cards per page with Previous/Next controls. Each override card shows its portrait, custom colour and scope, with **Portrait & colour** and **Delete override** controls. Deleting an override keeps the uploaded photo in saved photos and leaves aliases and other character-specific assignments intact. Alias controls treat alternate names as the same speaker. Expand **Add speaker overrides & aliases** to create assignments manually. Navigation has wider labels and a different themed bee for every tab; selected tabs use bright beeswax text on a contrasting honey-brown background.
 
 Click dialogue to open the same speaker controls used by thought portraits: a portrait viewer if the speaker has a photo, or the compact override editor if they do not. Dialogue is keyboard-focusable; Enter or Space opens its controls. Selecting text does not open an editor.
 
@@ -186,7 +186,7 @@ When **Dim other text when hovering a speaker** is enabled, hovering dialogue or
 
 ### Create or edit an override
 
-In **All Speakers → Add speaker overrides & aliases → Speaker portrait and colour overrides**:
+In **Overrides → Add speaker overrides & aliases → Speaker portrait and colour overrides**:
 
 1. Enter the speaker name or alias.
 2. Select a character card, the current persona, a saved photo, or a custom upload. Leave **Automatic** selected for a colour-only override.

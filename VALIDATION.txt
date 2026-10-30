@@ -1,6 +1,7 @@
-HivePack 1.16.0
+HivePack 1.17.0
 JavaScript module syntax check: passed.
-DOM regression suite: passed.
-Visual redesign uses honey-orange, beeswax, and warm charcoal across settings, popup menus, navigation, sliders, speaker/photo cards, final actions, and the floating launcher. Includes local honeycomb and bee SVG assets. Actual speaker colours remain unchanged; green power state and red Close indicators are retained. Only fallback silhouettes receive a warm presentation filter.
-New vector assets pass SVG XML parsing. Static colour checks exceed WCAG AA 4.5:1 for body text (14.91), muted text (7.76), selected navigation (7.76), and the final action (8.37). Existing DOM interaction regressions pass.
+DOM regression suite: passed, including independent Current Speakers and Overrides pagination (25 per page), inline scoped override deletion, and tab icon presence.
+Six themed bee tab SVG assets pass XML parsing. CSS braces balance.
+Selected tab beeswax text against the lightest point of the explicit background gradient has a 7.93:1 contrast ratio. Navigation is wider, labels wrap, and selected text colours explicitly override inherited theme colours.
+Removed duplicate Existing speaker overrides list; inline cards edit/delete individual name-and-scope assignments. Saved photo deletion is a separate operation.
 Full browser/live SillyTavern visual testing remains outstanding.
