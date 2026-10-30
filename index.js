@@ -422,7 +422,8 @@ function openPortraitViewer(src,title='Portrait') {
     const quick=document.createElement('label');quick.className='hp-quick-colour';quick.textContent='Style colour ';
     const colour=document.createElement('input');colour.type='color';colour.setAttribute('aria-label','Set speaker style colour immediately');
     colour.value=findOverride(title,settings())?.colour||'#91a8c5';
-    colour.addEventListener('change',()=>{const existing=findOverride(title,settings());storeOverride(title,{...(existing||{}),colour:colour.value});});quick.append(colour);toolbar.append(quick);
+    const disable=action('Disable colour override',()=>{const existing=findOverride(title,settings());if(existing)storeOverride(title,{...existing,colour:''});disable.hidden=true;});disable.hidden=!findOverride(title,settings())?.colour;
+    colour.addEventListener('change',()=>{const existing=findOverride(title,settings());storeOverride(title,{...(existing||{}),colour:colour.value});disable.hidden=false;});quick.append(colour,disable);toolbar.append(quick);
     const img=document.createElement('img');img.src=imagePath;img.alt=title;
     const error=document.createElement('p');error.hidden=true;error.textContent='Could not load this portrait.';
     img.addEventListener('error',()=>{img.hidden=true;error.hidden=false;});
@@ -621,10 +622,10 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
     const name=document.createElement('input');name.className='text_pole';name.placeholder='Speaker name';name.value=initialName;name.setAttribute('aria-label','Override speaker name');
     const scope=action('Global',()=>{draft.scope=draft.scope?'':selectedCharacterKey();updateScope();});scope.classList.add('hp-scope-toggle');
     const colour=document.createElement('input');colour.type='color';colour.value='#91a8c5';colour.setAttribute('aria-label','Custom override colour');
-    const enabled=document.createElement('input');enabled.type='checkbox';enabled.setAttribute('aria-label','Use custom override colour');
-    const colourLabel=document.createElement('label');colourLabel.className='hp-colour-control';colourLabel.append(enabled,document.createTextNode('Custom colour '),colour,scope);
+    const enabled={checked:false};const disable=action('Disable colour override',()=>{enabled.checked=false;disable.hidden=true;});disable.hidden=true;
+    const colourLabel=document.createElement('label');colourLabel.className='hp-colour-control';colourLabel.append(document.createTextNode('Custom colour '),colour,disable,scope);
     const select=document.createElement('select');select.className='text_pole';select.setAttribute('aria-label','Override portrait');
-    const preview=document.createElement('img');preview.className='hp-editor-preview';preview.alt='Selected override portrait';preview.hidden=true;
+    const preview=document.createElement('img');preview.className='hp-editor-preview';preview.alt='Selected override portrait';preview.hidden=true;preview.addEventListener('error',()=>{preview.hidden=true;preview.removeAttribute('src');});
     const status=document.createElement('small');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
     let draft={scope:''},previewUrl='',pinnedOverride=initialOverride;
     function updateScope(){styleScope(scope,draft.scope);scope.disabled=!draft.scope&&!selectedCharacterKey();}
@@ -639,7 +640,7 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
     function load(){
         const existing=pinnedOverride??findOverride(name.value,settings());pinnedOverride=null;
         draft={...(existing??{}),scope:existing?.scope||''};
-        enabled.checked=Boolean(draft.colour);colour.value=draft.colour||'#91a8c5';colour.disabled=!enabled.checked;updateScope();
+        enabled.checked=Boolean(draft.colour);colour.value=draft.colour||'#91a8c5';disable.hidden=!enabled.checked;updateScope();
         fillOptions();select.value=draft.image?'@custom':draft.avatar||'@auto';
         showPreview(draft.image || (draft.avatar&&draft.avatar!=='@auto'&&draft.avatar!=='@none'?draft.avatar==='@persona'?avatarUrl:context().getThumbnailUrl('avatar',draft.avatar):''));
     }
@@ -649,7 +650,7 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
         showPreview(draft.avatar==='@persona'?avatarUrl:draft.avatar&&draft.avatar!=='@none'?context().getThumbnailUrl('avatar',draft.avatar):'');
     });
     name.addEventListener('change',()=>{if(findOverride(name.value,settings()))load();});
-    enabled.addEventListener('change',()=>{colour.disabled=!enabled.checked;});
+    colour.addEventListener('change',()=>{enabled.checked=true;disable.hidden=false;});
     const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp,image/gif';file.className='hp-file-input';file.setAttribute('aria-label','Custom portrait image');
     const picker=action('＋ Choose custom photo',()=>file.click());picker.classList.add('hp-photo-picker');
     file.addEventListener('change',async()=>{
@@ -663,23 +664,27 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
     });
     const browse=action('Browse saved photos',()=>openSavedPhotoPicker(image=>{draft.image=image;delete draft.avatar;fillOptions();select.value='@custom';showPreview(image);status.textContent='Photo selected. Click Add / replace override to save.';}));
     const add=action('Add / replace override',()=>{
-        try{storeOverride(name.value,{...draft,colour:enabled.checked?colour.value:''});status.textContent=`Override saved for ${name.value.trim()}.`;}
+        try{storeOverride(name.value,{...draft,colour:enabled.checked?colour.value:''});status.textContent=`Override saved for ${name.value.trim()}.`;root.hpOnSave?.();}
         catch(error){status.textContent=error.message;}
     });
     const actions=document.createElement('div');actions.className='hp-editor-actions';actions.append(picker,browse);
     const cardLabel=document.createElement('label');cardLabel.textContent='Portrait source: choose a character card, your persona, or Automatic';cardLabel.append(select);
     const cardPreview=document.createElement('img');cardPreview.className='hp-card-preview';cardPreview.alt='Selected character card';cardPreview.hidden=true;cardLabel.prepend(cardPreview);
-    const syncCardPreview=()=>{const card=context().characters?.find(x=>x?.avatar===select.value);cardPreview.hidden=!card;if(card)cardPreview.src=context().getThumbnailUrl('avatar',card.avatar);};select.addEventListener('change',syncCardPreview);
+    cardPreview.addEventListener('error',()=>{cardPreview.hidden=true;cardPreview.removeAttribute('src');});
+    const syncCardPreview=()=>{const card=context().characters?.find(x=>x?.avatar && x.avatar!=='none' && x.avatar===select.value);cardPreview.hidden=!card;if(card)cardPreview.src=context().getThumbnailUrl('avatar',card.avatar);else cardPreview.removeAttribute('src');};select.addEventListener('change',syncCardPreview);
     root.append(instruction,name,colourLabel,cardLabel,file,actions,preview,add,status);
     if(mode==='upload')select.hidden=true;
     const cleanup=()=>{if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl='';}window.removeEventListener('beforeunload',cleanup);};
     root.hpCleanup=cleanup;window.addEventListener('beforeunload',cleanup,{once:true});
-    root.hpRefresh=()=>{updateScope();fillOptions();};
+    root.hpRefresh=()=>{updateScope();fillOptions();syncCardPreview();};
     load();syncCardPreview();return root;
 }
 function openOverrideDialog(speaker,mode='all',initialOverride=null){
     const popup=createPopup(`Portrait and colour: ${speaker}`,'hp-picker-dialog hp-override-dialog');
     const editor=buildOverrideEditor(speaker,mode,initialOverride);popup.content.append(editor);
+    editor.hpOnSave=popup.close;
+    const commit=Array.from(editor.querySelectorAll('button')).find(x=>x.textContent==='Add / replace override');commit.classList.add('hp-commit-override');
+    const check=document.createElement('span');check.textContent='✓ ';check.style.color='#74d78a';commit.prepend(check);
     popup.dialog.addEventListener('close',()=>editor.hpCleanup?.(),{once:true});
     const choices=document.createElement('div');choices.className='hp-editor-actions';
     choices.append(action('Character card',()=>{const select=editor.querySelector('select');select.hidden=false;select.focus();}),action('Saved photos',()=>Array.from(editor.querySelectorAll('button')).find(x=>x.textContent==='Browse saved photos').click()),action('Upload photo',()=>editor.querySelector('input[type="file"]').click()));
@@ -732,22 +737,24 @@ function addSettings(){
     const previewTitle=document.createElement('b');previewTitle.textContent='Live styling preview';appearance.append(previewTitle);
     const preview=document.createElement('div');preview.className='hp-preview';preview.innerHTML='<span class="hp-monologue"><span class="hp-monologue-content"><span class="hp-monologue-name"></span><span class="hp-monologue-body">An ordinary thought, <strong>an important detail</strong>, and <span class="hp-quote">“a remembered voice.”</span></span><span class="hp-monologue-name hp-monologue-footer"></span></span></span>';
     previewElement=preview.querySelector('.hp-monologue');appearance.append(preview);
-    const aliasesLabel=document.createElement('label');aliasesLabel.textContent='Aliases: one Alias = Character Name per line';const aliases=document.createElement('textarea');aliases.className='text_pole';aliases.rows=4;aliases.value=settings().aliases;aliases.placeholder='Appy = Apothos';aliases.addEventListener('change',()=>{settings().aliases=aliases.value;save();});aliasesLabel.append(aliases);area.append(aliasesLabel);
+    const aliasesLabel=document.createElement('label');aliasesLabel.textContent='Aliases: one Alias = Character Name per line';const aliases=document.createElement('textarea');aliases.className='text_pole';aliases.rows=4;aliases.value=settings().aliases;aliases.placeholder='Appy = Apothos';aliases.addEventListener('change',()=>{settings().aliases=aliases.value;save();});aliasesLabel.append(aliases);area.append(aliasesLabel);const aliasHelp=document.createElement('small');aliasHelp.textContent='HivePack treats an alias as the same speaker, sharing portrait overrides, colour overrides, and remembered colours.';area.append(aliasHelp);
     const heading=document.createElement('b');heading.textContent='Speaker portrait and colour overrides';area.append(heading);
     const editor=buildOverrideEditor();area.append(editor);
-    const rows=document.createElement('div');rows.className='hp-override-list';area.append(rows);
+    const saved=document.createElement('details');saved.className='hp-saved-overrides';const savedTitle=document.createElement('summary');savedTitle.textContent='Existing speaker overrides';saved.append(savedTitle);const rows=document.createElement('div');rows.className='hp-override-list';saved.append(rows);area.append(saved);
     function renderOverrides(){
         if(!panel.isConnected)return;editor.hpRefresh?.();rows.replaceChildren();
         for(const item of settings().overrides.filter(x=>!overrideScope(x)||overrideScope(x)===selectedCharacterKey())){
             const row=document.createElement('div');row.className='hp-override-row';const name=document.createElement('span');name.textContent=`${item.name} · ${item.image?'Custom photo':item.avatar||'Automatic portrait'}`;
             const picker=document.createElement('input');picker.type='color';picker.value=item.colour||'#91a8c5';picker.setAttribute('aria-label',`Override colour for ${item.name}`);
-            const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=Boolean(item.colour);enabled.setAttribute('aria-label',`Use override colour for ${item.name}`);picker.disabled=!enabled.checked;
-            const change=()=>storeOverride(item.name,{...item,colour:enabled.checked?picker.value:''});picker.addEventListener('change',change);enabled.addEventListener('change',change);
+            const disable=action('Disable colour override',()=>storeOverride(item.name,{...item,colour:''}));disable.hidden=!item.colour;
+            picker.addEventListener('change',()=>storeOverride(item.name,{...item,colour:picker.value}));
+            const portrait=item.image?safeImagePath(item.image):item.avatar==='@persona'?avatarUrl:item.avatar && !['@none','@auto'].includes(item.avatar)?context().getThumbnailUrl('avatar',item.avatar):'';
+            if(portrait){const thumb=document.createElement('img');thumb.className='hp-override-thumb';thumb.alt='';thumb.src=portrait;thumb.loading='lazy';thumb.addEventListener('error',()=>thumb.remove());row.append(thumb);}
             const scope=action(item.scope?'Current character':'Global',()=>{
                 const old=item.scope||'',next=old?'':selectedCharacterKey();if(!old&&!next)return;
                 settings().overrides=settings().overrides.filter(x=>x!==item);storeOverride(item.name,{...item,scope:next});
             });styleScope(scope,item.scope);scope.disabled=!item.scope&&!selectedCharacterKey();scope.classList.add('hp-scope-toggle');
-            const edit=action('Edit',()=>openOverrideDialog(item.name,'all',item));const remove=action('Remove',()=>{settings().overrides=settings().overrides.filter(x=>x!==item);context().saveSettingsDebounced();notifyOverrides();schedule();});row.append(name,enabled,picker,scope,edit,remove);rows.append(row);
+            const edit=action('Edit',()=>openOverrideDialog(item.name,'all',item));const remove=action('Remove',()=>{settings().overrides=settings().overrides.filter(x=>x!==item);context().saveSettingsDebounced();notifyOverrides();schedule();});row.append(name,picker,disable,scope,edit,remove);rows.append(row);
         }
     }
     overrideListeners.add(renderOverrides);host.append(panel);renderOverrides();

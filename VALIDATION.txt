@@ -1,5 +1,4 @@
-HivePack 1.7.0
+HivePack 1.7.1
 JavaScript module syntax check: passed.
-DOM regression suite: passed, including pending new-speaker colour saving, direct viewer colour persistence, portrait preservation, priority reordering, saved-photo preview navigation, upload staging and deletion.
+DOM regression suite: passed, including colour auto-enable, disable preserving portrait assignments, re-enable, failed preview hiding, collapsible saved overrides with thumbnails, and popup save-and-close. Existing formatting, streaming, colour priority, collapse, upload and photo-manager checks also pass.
 Full live SillyTavern/browser visual testing has not been performed.
-Native character-card selects use an adjacent selected-card thumbnail for browser compatibility.

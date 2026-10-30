@@ -75,7 +75,7 @@ Professor Bine = Ilya
 
 Aliases affect portraits and remembered colours. Labels retain the name written by the model. Alias chains are supported; cycles are safely ignored. Aliases are global preferences. Each speaker override can be **G (Global)** or **L (Local)**, scoped to the **Current character**. Character scope is keyed by the selected card's avatar filename, so it applies across that character's chats. A matching character-scoped override takes precedence over a global override. Renaming the card file may require recreating scoped overrides.
 
-The scope button is disabled when no character is selected and its current state is Global. A previously scoped override can still be switched back to Global. Overrides for other characters remain stored and reappear when those characters are selected. The main editor and each saved override row provide a colour picker and an enable checkbox. A colour-only override can leave portrait selection set to Automatic.
+The scope button is disabled when no character is selected and its current state is Global. A previously scoped override can still be switched back to Global. Overrides for other characters remain stored and reappear when those characters are selected. Selecting a colour enables its override. A Disable colour override button appears beside enabled pickers. The main editor stages changes until Add / replace override; saved override cards and the portrait viewer save colour changes immediately. A colour-only override can leave portrait selection set to Automatic.
 
 ### Custom photos and saved-photo management
 
@@ -83,7 +83,7 @@ Under **Speaker portrait and colour overrides**:
 
 1. Enter the exact speaker name (or alias).
 2. Choose a character card, a saved photo, or a custom upload.
-3. Optionally enable a custom colour and choose Global or Current character scope.
+3. Optionally select a custom colour to enable it, and choose G (Global) or L (Local) scope.
 4. Click **Add / replace override** to save the assignment.
 
 The compact **Choose custom photo** button opens the file selector. The selected photo appears in a preview. Choosing a new file uploads it to the server; it does not change a speaker's saved assignment until you click Add / replace override. If you close the editor without saving, the uploaded file remains available in saved photos.
@@ -167,3 +167,9 @@ Empty portraits use a vertical photo strip on the right. Portrait dialogs offer 
 Saved-photo previews place Back at the top left, Close at the top right, the title centered, and a Select photo button with a green check beneath it. Open portraits fit the window without enlarging small originals.
 
 Right-aligned bubbles enlarge toward the top left. Full-width bubbles use 82% of the available width and enlarge from the center, leaving room for the maximum 20% hover enlargement. **Portrait crop** offers bubble-height, original proportions, 1:1, 2:3, and 3:2 layouts.
+
+### New in 1.7.1
+
+Portrait previews stay hidden until a valid image is selected and disappear if loading fails. Popup override editors have centered selection and colour controls, plus a centered save button with a green check. A successful save closes the popup; validation errors keep it open.
+
+Existing overrides appear in a collapsed **Existing speaker overrides** section with compact cards and portrait thumbnails. Choose any colour to enable an override and use **Disable colour override** to remove its colour while retaining the portrait and scope. The portrait viewer offers the same disable action beside its immediate colour picker. Aliases share the canonical speaker’s portrait overrides, colour overrides, and remembered colours.
