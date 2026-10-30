@@ -1,5 +1,6 @@
-HivePack 1.9.0
+HivePack 1.10.0
 JavaScript module syntax check: passed.
 DOM regression suite: passed.
-New checks cover the c dialogue template, reversible hidden speaker/HEX headers across inline markup, multiple speakers, legacy dialogue support, master-off cleanup and node preservation, generation deferral and completion/stop, sampling methods with synthetic saturated/background/transparent pixels, per-method caches, and pipette coordinate mapping plus immediate override save. Existing formatting, collapse, override, photo management and dialogue regressions pass.
-Formatter, canvas, and image APIs are mocked. Full live SillyTavern/browser visual testing has not been performed.
+New checks cover default-off injection, bottom-positioned collapsed settings and nested editor, depth and system role, custom prompt editing/reset, mode switching without duplicate slots, runtime Author’s Note depth/role changes, inactive/non-chat/duplicate note suppression, preservation of note objects and chat metadata, master-off cleanup, empty prompts and disabled injection. Existing formatting, streaming, sampling, overrides and photo-management checks pass.
+Implementation inspected against SillyTavern setExtensionPrompt, Author’s Note slot rebuilding, and sorted in-chat extension prompt assembly. Append mode supports in-chat Author’s Note placement only.
+Prompt/formatter/image APIs are mocked. Full live SillyTavern/browser visual testing has not been performed.

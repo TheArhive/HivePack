@@ -1,7 +1,55 @@
-import { user_avatar } from '../../../../script.js';
+import { user_avatar, extension_prompt_types, extension_prompt_roles, MAX_INJECTION_DEPTH } from '../../../../script.js';
 
 const KEY = 'hivepack';
-const defaults = { masterEnabled: true, afterGeneration: false, samplingMethod: 'average', enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble', dialogueColours: true, dialoguePortraitHover: false, dialoguePriority: ['override','model','photo'] };
+const DEFAULT_INSTRUCTION = `<ChatColor>
+Assign a distinct, readable hex color to every characters dialogue using: <c>Name | #Hex: "Dialogue here"</c>. Once assigned, a character's color is LOCKED for the entire story. Wrap ALL dialogue with these blocks.
+Eg: <c>Tomy | #Hex: "Do i have to explain this again??"</c>
+---
+Interweave character's inner monologue (this can be any character present in the scene, including {{user}}) through the response between <i></i> while featuring the characters name
+Eg: <i>Tomy | #Hex: I can't believe I have to explain this again.</i>
+</ChatColor>`;
+const DEPTH_PROMPT_KEY='hivepack_chatcolor';
+// SillyTavern sorts in-chat extension prompt keys; this follows its Author's Note slot.
+const NOTE_PROMPT_KEY='2_floating_prompt',APPEND_PROMPT_KEY='2_floating_prompt_hivepack';
+let installedPrompt=null;
+function injectionDepth(value){const number=Number(value);return Number.isFinite(number)?Math.max(0,Math.min(MAX_INJECTION_DEPTH,Math.floor(number))):4;}
+function syncPromptInjection(){
+    const c=context(),s=settings(),registry=c.extensionPrompts;
+    const enabled=s.masterEnabled&&s.promptEnabled&&Boolean(s.instructionPrompt.trim());
+    const key=s.injectionMode==='append'?APPEND_PROMPT_KEY:DEPTH_PROMPT_KEY;
+    for(const owned of [DEPTH_PROMPT_KEY,APPEND_PROMPT_KEY])if((!enabled||owned!==key)&&registry?.[owned])delete registry[owned];
+    if(!enabled){installedPrompt=null;return;}
+    if(typeof c.setExtensionPrompt!=='function'||!registry)return;
+    const signature=JSON.stringify([key,s.instructionPrompt,injectionDepth(s.injectionDepth)]);
+    if(installedPrompt?.registry===registry&&installedPrompt.signature===signature&&registry[key]===installedPrompt.entry)return;
+    c.setExtensionPrompt(key,s.instructionPrompt,extension_prompt_types.IN_CHAT,injectionDepth(s.injectionDepth),false,extension_prompt_roles.SYSTEM);
+    const entry=registry[key];if(!entry)return;
+    if(s.injectionMode==='append'){
+        // Read the current runtime note lazily: core rebuilds it during every generation.
+        // Only our own injection entry is changed; the note/metadata stay untouched.
+        Object.defineProperties(entry,{
+            value:{enumerable:true,configurable:true,get(){const current=context(),options=settings(),note=current.extensionPrompts?.[NOTE_PROMPT_KEY],text=options.instructionPrompt.trim();
+                return options.masterEnabled&&options.promptEnabled&&options.injectionMode==='append'&&Number(note?.position)===extension_prompt_types.IN_CHAT&&String(note?.value||'').trim()&&text&&!String(note.value).includes(text)?options.instructionPrompt:'';}},
+            depth:{enumerable:true,configurable:true,get(){return injectionDepth(context().extensionPrompts?.[NOTE_PROMPT_KEY]?.depth??4);}},
+            role:{enumerable:true,configurable:true,get(){return context().extensionPrompts?.[NOTE_PROMPT_KEY]?.role??extension_prompt_roles.SYSTEM;}},
+        });
+    }
+    installedPrompt={registry,signature,entry};
+}
+function addPromptSettings(area,save){
+    const section=document.createElement('details');section.className='hp-prompt-settings';const title=document.createElement('summary');title.textContent='Prompt injection';section.append(title);
+    const toggleLabel=document.createElement('label');toggleLabel.className='checkbox_label';const toggle=document.createElement('input');toggle.type='checkbox';toggle.dataset.rpp='promptEnabled';toggle.checked=settings().promptEnabled;toggleLabel.append(toggle,document.createTextNode('Inject HivePack model instructions'));section.append(toggleLabel);
+    const modeLabel=document.createElement('label');modeLabel.textContent='Placement';const mode=document.createElement('select');mode.className='text_pole';mode.dataset.rpp='injectionMode';
+    for(const [value,label] of [['depth','Separate injection at depth'],['append',"Append after Author’s Note (in-chat only)"]]){const option=document.createElement('option');option.value=value;option.textContent=label;mode.append(option);}mode.value=settings().injectionMode;modeLabel.append(mode);section.append(modeLabel);
+    const depthLabel=document.createElement('label');depthLabel.textContent='Injection depth (0 = most recent end of chat)';const depth=document.createElement('input');depth.type='number';depth.className='text_pole';depth.dataset.rpp='injectionDepth';depth.min=0;depth.max=MAX_INJECTION_DEPTH;depth.step=1;depth.value=settings().injectionDepth;depthLabel.append(depth);section.append(depthLabel);
+    const help=document.createElement('small');help.textContent="Off by default. Separate mode sends a system instruction at your chosen depth. Append mode follows an active in-chat Author’s Note’s depth, role, and interval; it does not edit the saved note. If that note is disabled or placed outside chat, append mode sends nothing. Remove duplicate manual instructions when enabling this.";section.append(help);
+    const editor=document.createElement('details');editor.className='hp-prompt-editor';const editorTitle=document.createElement('summary');editorTitle.textContent='Edit model instructions';const text=document.createElement('textarea');text.className='text_pole';text.rows=12;text.value=settings().instructionPrompt;text.setAttribute('aria-label','HivePack model instructions');
+    const reset=action('Reset to default',()=>{text.value=DEFAULT_INSTRUCTION;settings().instructionPrompt=DEFAULT_INSTRUCTION;save();});editor.append(editorTitle,text,reset);section.append(editor);area.append(section);
+    const state=()=>{depth.disabled=mode.value==='append';};state();
+    toggle.addEventListener('change',()=>{settings().promptEnabled=toggle.checked;save();});mode.addEventListener('change',()=>{settings().injectionMode=mode.value;state();save();});depth.addEventListener('input',()=>{settings().injectionDepth=injectionDepth(depth.value);save();});depth.addEventListener('change',()=>{depth.value=settings().injectionDepth;});text.addEventListener('input',()=>{settings().instructionPrompt=text.value;save();});
+    if(typeof context().setExtensionPrompt!=='function'||!context().extensionPrompts){toggle.disabled=true;help.textContent='Prompt injection is unavailable: this SillyTavern version does not expose the extension prompt API.';}
+}
+const defaults = { promptEnabled: false, injectionMode: 'depth', injectionDepth: 4, instructionPrompt: DEFAULT_INSTRUCTION, masterEnabled: true, afterGeneration: false, samplingMethod: 'average', enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble', dialogueColours: true, dialoguePortraitHover: false, dialoguePriority: ['override','model','photo'] };
 let queued = false;
 let revision = 0;
 let lastAvatar;
@@ -21,6 +69,7 @@ function schedule() {
 }
 function refresh() {
     const s = settings();
+    syncPromptInjection();
     const previewHost=document.querySelector('.hp-preview');if(previewHost)previewHost.hidden=!s.masterEnabled;
     if(!s.masterEnabled){
         restoreThoughts(document);document.querySelectorAll('#chat .mes_text').forEach(unwrapDialogue);
@@ -888,7 +937,7 @@ function addSettings(){
             const edit=action('Edit',()=>openOverrideDialog(item.name,'all',item));const remove=action('Remove',()=>{settings().overrides=settings().overrides.filter(x=>x!==item);context().saveSettingsDebounced();notifyOverrides();schedule();});row.append(name,picker,disable,scope,edit,remove);rows.append(row);
         }
     }
-    overrideListeners.add(renderOverrides);host.append(panel);renderOverrides();
+    addPromptSettings(area,save);overrideListeners.add(renderOverrides);host.append(panel);renderOverrides();
 }
 
 function init() {
@@ -896,7 +945,7 @@ function init() {
     const c = context();
     const events = c.eventTypes ?? c.event_types;
     if(events.GENERATION_STARTED)c.eventSource.on(events.GENERATION_STARTED,(type,options,dryRun)=>{
-        const ctx=context();
+        syncPromptInjection();const ctx=context();
         activeGeneration=!dryRun&&!['quiet','impersonate'].includes(type)?{chat:ctx.chat,length:ctx.chat?.length||0,lastAI:ctx.chat?.findLastIndex(x=>!x.is_user&&!x.is_system),type}:null;if(ctx.streamingProcessor)endedProcessors.delete(ctx.streamingProcessor);schedule();
         generationSnapshot=!dryRun && !['quiet','impersonate'].includes(type) ? {chat:ctx.chat,id:ctx.getCurrentChatId?.() ?? ctx.chatId,last:ctx.chat?.at(-1)?.mes,length:ctx.chat?.length} : null;
     });

@@ -321,3 +321,11 @@ input[type="color"]::-webkit-color-swatch { border:0;border-radius:1px; }
 .hp-portrait-dialog img.hp-sampling { cursor:crosshair; }
 .hp-quick-colour button[aria-pressed="true"] { outline:2px solid #8dcfff; }
 .hp-preview[hidden] { display:none!important; }
+
+.hp-prompt-settings { margin:14px 0 0;padding:9px;border:1px solid #71869e;border-radius:7px; }
+.hp-prompt-settings summary { cursor:pointer;font-weight:600; }
+.hp-prompt-settings > label { display:block;margin:9px 0; }
+.hp-prompt-settings > .checkbox_label { display:flex; }
+.hp-prompt-editor { margin-top:12px; }
+.hp-prompt-editor textarea { margin-top:8px;resize:vertical; }
+.hp-prompt-editor .menu_button { width:fit-content; }

@@ -1,8 +1,8 @@
 # HivePack
 
-**Version 1.9.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.10.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
-HivePack changes the chat display. It does not rewrite saved messages, prompts, or injections. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
+HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
 ## Install and update
 
@@ -18,7 +18,27 @@ The right-side persona portrait requires [Moonlit Echoes Theme](https://github.c
 
 ## Model instructions / Author’s Note
 
-### Inner thoughts
+Use the optional injection controls to send instructions automatically, or add the manual examples below to your own Author’s Note.
+
+### Automatic prompt injection
+
+Open **Extensions → HivePack → Prompt injection** at the very bottom of the settings. The section and its nested prompt editor start collapsed, and injection starts **off**.
+
+1. Enable **Inject HivePack model instructions**.
+2. Choose the placement mode.
+3. In separate mode, set **Injection depth**. The default is 4; 0 places it at the most recent end of the chat. Values from 0 to 10,000 are accepted.
+4. Expand **Edit model instructions** to customise the text. Edits are saved automatically. **Reset to default** restores the supplied `<ChatColor>` block containing the dialogue and thought instructions.
+
+| Placement | Behaviour |
+| --- | --- |
+| Separate injection at depth | Sends the text as a system instruction at your chosen chat depth, independently of Author’s Note. |
+| Append after Author’s Note (in-chat only) | Sends it immediately after the active in-chat Author’s Note, using that note’s depth and role. The separate depth field is disabled in this mode. |
+
+Append mode uses a separate runtime prompt entry beside Author’s Note; it does not edit the saved note or chat metadata. It follows the note’s active interval and sends nothing if the note is empty, disabled, or placed outside chat. Set Author’s Note to **In-chat** to use append mode; otherwise use the separate depth mode. An identical instruction block already present in the note is not appended twice.
+
+Injection preferences are global. Emptying the prompt, switching injection off, or switching **Enable HivePack** off removes HivePack’s runtime injections. Manual instructions remain untouched. Remove duplicate manual formatting instructions when enabling automatic injection. SillyTavern handles macros such as `{{user}}` in the injected text.
+
+### Inner thoughts (manual)
 
 Add this instruction to your Author’s Note:
 
@@ -35,7 +55,7 @@ Eg: <i>Tomy | #Hex: I can't believe I have to explain this again.</i>
 
 Thoughts can belong to any character in the scene, including your persona. `<i>Name: Thought</i>` also works, using an override, a remembered colour, or the default styling when no HEX is supplied. Use consistent speaker names or configure aliases.
 
-### Coloured dialogue
+### Coloured dialogue (manual)
 
 Enable **Colour character dialogue (<c>)**, then add this instruction:
 
@@ -50,7 +70,7 @@ HivePack colours matching dialogue already rendered by SillyTavern, retaining it
 
 ## Main settings
 
-The centred **Enable HivePack** switch sits above the other settings. Turning it off removes HivePack’s thought cards, dialogue colours and hidden headers, side portraits, and collapse controls. It also pauses colour learning. Your preferences and overrides are retained.
+The centred **Enable HivePack** switch sits above the other settings. Turning it off removes HivePack’s thought cards, dialogue colours and hidden headers, side portraits, and collapse controls. It also pauses colour learning and removes HivePack’s runtime prompt injection. Your preferences and overrides are retained.
 
 | Setting | What it does |
 | --- | --- |
@@ -194,7 +214,7 @@ Thoughts wait for a closing `</i>`, and dialogue waits for `</c>` (or the legacy
 
 No build step is required. Install development dependencies with `npm install`, then run `npm test`. Check module syntax with `node --input-type=module --check < index.js`.
 
-DOM regression tests cover formatting, colour sources, collapse controls, streaming, overrides, photo management, and dialogue interactions. Image APIs are mocked. Live SillyTavern and full-browser visual testing remain outstanding. See [VALIDATION.txt](VALIDATION.txt).
+DOM regression tests cover formatting, colour sources, collapse controls, streaming, overrides, photo management, dialogue interactions, and prompt injection. Formatter, image, and prompt APIs are mocked. Live SillyTavern and full-browser visual testing remain outstanding. See [VALIDATION.txt](VALIDATION.txt).
 
 ## Uninstall and licence
 
