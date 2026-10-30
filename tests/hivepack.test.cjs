@@ -76,6 +76,20 @@ s.samplePortrait=true;s.colourPriority=['photo','model','override','memory'];run
 sandbox.Image=class {set src(value){Promise.resolve().then(()=>this.onerror());}};run('photoColours.clear(); schedule()');await flush();assert.notEqual(text.querySelector('.hp-monologue').style.getPropertyValue('--hp-colour'),'#0000ff');
 // Literal markdown bold is also decorated if the renderer leaves it inside raw HTML.
 c.chat[0].mes='<i>Mira: **Important** and "a quote".</i>';text.innerHTML=c.chat[0].mes;await flush();assert.equal(text.querySelector('strong').textContent,'Important');assert.ok(text.querySelector('.hp-quote'));
+// Dialogue converts source for display only, honors separate priorities and hover dependency.
+c.messageFormatting=(value)=>value;
+const dialogueSource='<charcolor=#35BD5A| Mira>"Hello <strong>there</strong>."</charcolor> <charcolor=#ff0000 | Unknown>"No photo."</charcolor>';
+c.chat[0].mes=dialogueSource;text.innerHTML='Sanitized dialogue without custom tags';s.dialogueColours=true;s.enabled=true;s.dialoguePortraitHover=true;s.dialoguePriority=['override','model','photo'];run("storeOverride('Mira',{avatar:'Mira.png',colour:'#112233',scope:'Mira.png'})");await flush();
+let dialogue=text.querySelector('.hp-dialogue');assert.equal(dialogue.dataset.hpSpeaker,'Mira');assert.ok(dialogue.querySelector('strong'));assert.equal(dialogue.style.getPropertyValue('--hp-dialogue-colour'),'#112233');assert.equal(c.chat[0].mes,dialogueSource);
+const right=mes.querySelector('.rpp-image');dialogue.dispatchEvent(new window.Event('mouseenter'));await flush();assert.match(right.getAttribute('src'),/Mira.png/);dialogue.dispatchEvent(new window.Event('mouseleave'));await flush();assert.match(right.getAttribute('src'),/Appy.png/);
+text.querySelectorAll('.hp-dialogue')[1].dispatchEvent(new window.Event('mouseenter'));await flush();assert.match(right.getAttribute('src'),/Appy.png/);
+s.dialoguePriority=['model','override','photo'];run('schedule()');await flush();assert.equal(dialogue.style.getPropertyValue('--hp-dialogue-colour'),'#35BD5A');
+s.dialoguePriority=['photo','model','override'];run("photoColours.set(fullPortraitSource(resolvePortrait('Mira',settings())),{colour:'#334455'});schedule()");await flush();assert.equal(dialogue.style.getPropertyValue('--hp-dialogue-colour'),'#334455');
+s.enabled=false;run('schedule()');await flush();assert.ok(d.querySelector('[data-rpp="dialoguePortraitHover"]').disabled);assert.equal(mes.querySelector('.rpp-image'),null);
+s.enabled=true;s.dialogueColours=false;run('schedule()');await flush();assert.equal(text.querySelector('.hp-dialogue'),null);assert.equal(c.chat[0].mes,dialogueSource);
+s.dialogueColours=true;c.chat[0].mes='<charcolor=#123456|Mira>unfinished';run('schedule()');await flush();assert.equal(text.querySelector('.hp-dialogue'),null);
+const examples=run('dialogueMarkup("`<charcolor=#123456|Mira>example</charcolor>`")');assert.ok(!examples.includes('hp-dialogue'));
+assert.equal(run('dialogueMarkup("<charcolor=red|Mira>bad</charcolor>")'),'<charcolor=red|Mira>bad</charcolor>');
 const css=fs.readFileSync(path.join(__dirname,'..','style.css'),'utf8');assert.ok(!css.includes('content: \'▾'));assert.match(css,/hp-photo-picker \{ display: inline-flex;width: fit-content/);
 console.log('PASS: formatting, quotes/bold, priorities, alpha-weighted averages, scoped overrides, aliases, live preview, alignment, 20% hover, collapse controls/defaults/auto-collapse, streaming, fallbacks, viewer controls, staged uploads, 25-item pagination/selection, deletion and preservation');
 })().catch(error=>{console.error(error);process.exitCode=1;});

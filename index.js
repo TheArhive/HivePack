@@ -1,7 +1,7 @@
 import { user_avatar } from '../../../../script.js';
 
 const KEY = 'hivepack';
-const defaults = { enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble' };
+const defaults = { enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble', dialogueColours: true, dialoguePortraitHover: false, dialoguePriority: ['override','model','photo'] };
 let queued = false;
 let revision = 0;
 let lastAvatar;
@@ -39,6 +39,7 @@ function refresh() {
     }
     applyAppearance(s);
     learnColours(s);
+    refreshDialogue(s);
     refreshMonologues(s);
     refreshMessageButtons(s);
     refreshLivePreview();
@@ -55,13 +56,46 @@ function refresh() {
             img.alt = '';
             img.loading = 'lazy';
             img.decoding = 'async';
-            img.addEventListener('error', () => { img.style.visibility = 'hidden'; });
+            img.addEventListener('error', () => { if(img.getAttribute('src')!==avatarUrl){dialogueHover.delete(mes);img.setAttribute('src',avatarUrl);}else img.style.visibility = 'hidden'; });
             img.addEventListener('load', () => { img.style.visibility = ''; });
             column.append(img);
             mes.append(column);
         }
         const img = column.firstElementChild;
-        if (img.getAttribute('src') !== avatarUrl) img.setAttribute('src', avatarUrl);
+        const hovered=dialogueHover.get(mes);const source=s.dialogueColours && s.dialoguePortraitHover && hovered?.isConnected?resolvePortrait(hovered.dataset.hpSpeaker,s):'';
+        const target=source||avatarUrl;if(img.getAttribute('src')!==target)img.setAttribute('src',target);
+    });
+}
+
+// Reformat from original source through SillyTavern's sanitizer. Never write chat/prompt text.
+const dialogueRender=new WeakMap(),dialogueHover=new WeakMap();
+function dialoguePriority(s){const allowed=['override','photo','model'];return [...new Set([...(Array.isArray(s.dialoguePriority)?s.dialoguePriority:[]).filter(x=>allowed.includes(x)),...allowed])];}
+function dialogueMarkup(source){
+    const escape=value=>value.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return source.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)/g).map((part,index)=>index%2?part:part.replace(/<charcolor\s*=\s*(#[0-9a-f]{6})\s*\|\s*([^<>\n]+?)\s*>([\s\S]*?)<\/charcolor\s*>/gi,(_,hex,name,body)=>`<span class="hp-dialogue" data-hp-speaker="${escape(name.trim())}" data-hp-explicit-colour="${hex}">${body}</span>`)).join('');
+}
+function refreshDialogue(s){
+    const hoverToggle=document.querySelector('[data-rpp="dialoguePortraitHover"]');
+    if(hoverToggle){hoverToggle.disabled=!s.enabled;hoverToggle.closest('label').classList.toggle('hp-setting-disabled',!s.enabled);hoverToggle.title=s.enabled?'Show the dialogue speaker in the right-side Ripple portrait while hovering':'Enable Show persona beside full messages first';}
+    document.querySelectorAll('#chat > .mes[is_user="false"]:not([is_system="true"])').forEach(mes=>{
+        const holder=mes.querySelector('.mes_text'),id=Number(mes.getAttribute('mesid')),message=context().chat?.[id];if(!holder||!message)return;
+        const source=message.mes;if(typeof source!=='string')return;
+        const prior=dialogueRender.get(holder),hasTags=/<charcolor\s*=/i.test(source);
+        if((hasTags||prior) && typeof context().messageFormatting==='function'){
+            const transformed=s.dialogueColours?dialogueMarkup(source):source;
+            const needs=prior?.source!==source || prior?.enabled!==s.dialogueColours || (s.dialogueColours && transformed!==source && !holder.querySelector('.hp-dialogue'));
+            if(needs){holder.innerHTML=context().messageFormatting(transformed,message.name||context().name2,false,false,id);dialogueRender.set(holder,{source,enabled:s.dialogueColours});dialogueHover.delete(mes);}
+        }
+        holder.querySelectorAll('.hp-dialogue').forEach(span=>{
+            if(span.closest('code,pre'))return;
+            const values={override:findOverride(span.dataset.hpSpeaker,s)?.colour,model:span.dataset.hpExplicitColour};
+            for(const key of dialoguePriority(s)){if(key==='photo'){const src=resolvePortrait(span.dataset.hpSpeaker,s);values.photo=src?requestPhotoColour(src):null;}if(/^#[0-9a-f]{6}$/i.test(values[key]||'')){span.style.setProperty('--hp-dialogue-colour',values[key]);break;}}
+            if(!s.dialogueColours)span.style.removeProperty('--hp-dialogue-colour');
+            if(!span.hpHoverBound){span.hpHoverBound=true;
+                span.addEventListener('mouseenter',()=>{const current=settings();if(current.dialogueColours&&current.dialoguePortraitHover&&current.enabled&&resolvePortrait(span.dataset.hpSpeaker,current)){dialogueHover.set(mes,span);schedule();}});
+                span.addEventListener('mouseleave',()=>{if(dialogueHover.get(mes)===span){dialogueHover.delete(mes);schedule();}});
+            }
+        });
     });
 }
 
@@ -709,7 +743,7 @@ function addSettings(){
     const area=panel.querySelector('.hp-settings-content');
     const save=()=>{context().saveSettingsDebounced();schedule();};
     const checks=document.createElement('div');checks.className='hp-checkbox-grid';area.append(checks);
-    for(const [key,title] of Object.entries({monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',samplePortrait:'Sample average portrait colour',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)'})){
+    for(const [key,title] of Object.entries({monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',samplePortrait:'Sample average portrait colour',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)',dialogueColours:'Colour charcolor dialogue',dialoguePortraitHover:'Show dialogue speaker portrait on hover (Ripple only)'})){
         const label=document.createElement('label');label.className='checkbox_label';const input=document.createElement('input');input.type='checkbox';input.dataset.rpp=key;input.checked=Boolean(settings()[key]);label.append(input,document.createTextNode(title));input.addEventListener('change',()=>{settings()[key]=input.checked;save();});checks.append(label);
     }
     const appearance=document.createElement('details');appearance.className='hp-appearance';const summary=document.createElement('summary');summary.textContent='Appearance';appearance.append(summary);area.append(appearance);
@@ -734,6 +768,16 @@ function addSettings(){
             const up=action('↑',()=>move(source,Math.max(0,index-1))),down=action('↓',()=>move(source,Math.min(sources.length-1,index+1)));up.disabled=index===0;down.disabled=index===sources.length-1;up.setAttribute('aria-label',`Move ${sourceLabels[source]} earlier`);down.setAttribute('aria-label',`Move ${sourceLabels[source]} later`);row.append(up,down);priorities.append(row);
         });
     }renderPriority();
+    const dialogueHeading=document.createElement('b');dialogueHeading.textContent='Dialogue colour priority (first available wins)';appearance.append(dialogueHeading);
+    const dialogueList=document.createElement('div');dialogueList.className='hp-dialogue-priority';appearance.append(dialogueList);
+    function renderDialoguePriority(){dialogueList.replaceChildren();let dragged=null;
+        const labels={override:'Override',photo:'Photo average',model:'HEX in message'};
+        const move=(source,index)=>{const order=dialoguePriority(settings());order.splice(order.indexOf(source),1);order.splice(index,0,source);settings().dialoguePriority=order;save();renderDialoguePriority();};
+        dialoguePriority(settings()).forEach((source,index)=>{const row=document.createElement('div');row.className='hp-priority-item';row.draggable=true;row.textContent=`⠿ ${index+1}. ${labels[source]}`;
+            row.addEventListener('dragstart',e=>{dragged=source;e.dataTransfer?.setData('text/plain',source);});row.addEventListener('dragover',e=>e.preventDefault());row.addEventListener('drop',e=>{e.preventDefault();const value=dragged||e.dataTransfer?.getData('text/plain');if(['override','photo','model'].includes(value))move(value,index);});
+            const up=action('↑',()=>move(source,index-1)),down=action('↓',()=>move(source,index+1));up.disabled=index===0;down.disabled=index===2;up.setAttribute('aria-label',`Move dialogue ${labels[source]} earlier`);down.setAttribute('aria-label',`Move dialogue ${labels[source]} later`);row.append(up,down);dialogueList.append(row);
+        });
+    }renderDialoguePriority();
     const previewTitle=document.createElement('b');previewTitle.textContent='Live styling preview';appearance.append(previewTitle);
     const preview=document.createElement('div');preview.className='hp-preview';preview.innerHTML='<span class="hp-monologue"><span class="hp-monologue-content"><span class="hp-monologue-name"></span><span class="hp-monologue-body">An ordinary thought, <strong>an important detail</strong>, and <span class="hp-quote">“a remembered voice.”</span></span><span class="hp-monologue-name hp-monologue-footer"></span></span></span>';
     previewElement=preview.querySelector('.hp-monologue');appearance.append(preview);

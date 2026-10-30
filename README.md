@@ -173,3 +173,18 @@ Right-aligned bubbles enlarge toward the top left. Full-width bubbles use 82% of
 Portrait previews stay hidden until a valid image is selected and disappear if loading fails. Popup override editors have centered selection and colour controls, plus a centered save button with a green check. A successful save closes the popup; validation errors keep it open.
 
 Existing overrides appear in a collapsed **Existing speaker overrides** section with compact cards and portrait thumbnails. Choose any colour to enable an override and use **Disable colour override** to remove its colour while retaining the portrait and scope. The portrait viewer offers the same disable action beside its immediate colour picker. Aliases share the canonical speaker’s portrait overrides, colour overrides, and remembered colours.
+
+### Dialogue colouring (1.8.0)
+
+Enable **Colour charcolor dialogue** to display dialogue wrapped in `<charcolor=#RRGGBB|Name>…</charcolor>`. Six hexadecimal digits are required, and whitespace around the separator is allowed. Formatting inside the dialogue is retained. Only complete blocks in AI messages are processed, excluding code examples. Stored messages and outgoing prompt text are unchanged.
+
+Add this instruction to your author’s note:
+
+```text
+Assign a distinct, readable hex color to every characters dialogue using: <charcolor=#HEXCODE | Character Name>"Dialogue here"</charcolor>. Once assigned, a character's color is LOCKED for the entire story. Wrap ALL dialogue with these blocks.
+Eg: <charcolor=#35BD5A| Diane>"Can you believe this?"</charcolor>
+```
+
+**Appearance → Dialogue colour priority** has its own draggable order: Override, Photo average, and HEX in message. The default is Override → HEX in message → Photo average. The first available source wins. Photo average uses the speaker’s resolved portrait and falls through while sampling or if sampling fails. This is independent of the thought portrait-sampling checkbox. Overrides and aliases use the same global/current-character rules as thoughts.
+
+Enable **Show dialogue speaker portrait on hover (Ripple only)** to temporarily replace the right-side persona portrait while pointing at that speaker’s dialogue. Leaving the dialogue restores the persona. A speaker without an associated image does not change it; failed image loads restore the persona. This option is disabled and greyed out unless **Show persona beside full messages (Ripple only)** is enabled, and the portrait swap requires Moonlit Echoes’ Ripple style. Hover swapping is off by default.
