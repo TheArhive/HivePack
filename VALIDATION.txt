@@ -1,5 +1,6 @@
-HivePack 1.12.0
+HivePack 1.13.0
 JavaScript module syntax check: passed.
 DOM regression suite: passed.
-New coverage: older thought messages collapse on opening/switching chats while the latest thought message expands; manual choices persist until reopening; portrait Close button is last and centred by CSS; wand entries use native div markup; new panel tabs, narration/dialogue/missing-portrait previews, shared controls with the retained fallback drawer, panel cleanup, remembered size, composer docking, pointer dragging/click suppression, relative-position persistence/clamping, reset, wand shortcut, and hive asset path. Existing regressions pass.
-Formatter/image/prompt/canvas APIs and viewport geometry are mocked. No browser executable is available for full visual testing; live SillyTavern/browser visual testing remains outstanding.
+New coverage verifies no Extensions drawer or speaker-manager wand entry; inline speaker detection/alias controls; automatically loaded inline photo pagination/preview; gallery cleanup; power-switch state and supplied assets; sole settings-panel preference persistence; direct pointer launcher positioning; and priority reordering that moves rows during drag, animates displaced rows, and commits only on release. Existing formatting, overrides, prompts, hover, collapse, photo and launcher regressions pass.
+CSS explicitly disables inherited launcher transitions/animation, reserves composer space, uses compact settings columns, widens preview, and styles final override actions.
+Formatter/image/prompt/canvas APIs, geometry and animation are mocked. Full browser/live SillyTavern visual testing remains outstanding.

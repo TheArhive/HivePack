@@ -573,7 +573,7 @@ async function uploadPortrait(file) {
     const path=safeImagePath(result.path);
     if(!path)throw new Error('The server returned an invalid image path. Your existing override was kept.');
     // Store a server-relative URL so it also works when opening this server from another device.
-    const url=new URL(path);return `${url.pathname}${url.search}`;
+    const url=new URL(path);refreshPhotoLibraries();return `${url.pathname}${url.search}`;
 }
 function fullPortraitSource(src) {
     const safe=safeImagePath(src);if(!safe)return '';
@@ -787,38 +787,31 @@ function createPopup(title,className='hp-picker-dialog'){
     header.append(label,closeButton);dialog.append(header,content);document.body.append(dialog);
     if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');closeButton.focus();return {dialog,content,close};
 }
-async function openSavedPhotoPicker(onSelect){
-    const popup=createPopup('Saved HivePack photos');let photos=[],page=0;const size=25;
-    popup.content.textContent='Loading saved photos…';
+const photoLibraries=new Set();
+function refreshPhotoLibraries(except=null){for(const library of photoLibraries){if(!library.root.isConnected){photoLibraries.delete(library);continue;}if(library!==except)library.refresh();}}
+function mountPhotoManager(root,onSelect,popup=null){
+    let photos=[],page=0,alive=true,request=0;const size=25;
     const render=()=>{
-        if(!popup.dialog.isConnected)return;popup.content.replaceChildren();popup.dialog.querySelector('.hp-photo-back')?.remove();
-        if(!photos.length){popup.content.textContent='No saved photos yet.';return;}
-        page=Math.min(page,Math.max(0,Math.ceil(photos.length/size)-1));
-        const grid=document.createElement('div');grid.className='hp-photo-gallery';
+        if(!alive||!root.isConnected)return;root.replaceChildren();popup?.dialog.querySelector('.hp-photo-back')?.remove();
+        if(!photos.length){root.textContent='No saved photos yet. Upload a portrait to get started.';return;}
+        page=Math.min(page,Math.max(0,Math.ceil(photos.length/size)-1));const grid=document.createElement('div');grid.className='hp-photo-gallery';
         for(const image of photos.slice(page*size,(page+1)*size)){
             const tile=document.createElement('div');tile.className='hp-photo-tile';const thumb=document.createElement('img');thumb.src=image;thumb.alt='Saved portrait';thumb.loading='lazy';
             const view=action('Preview',()=>{
-                popup.content.replaceChildren();const large=document.createElement('img');large.src=image;large.alt='Selected portrait';large.className='hp-selected-photo';
-                const back=action('Back',render);back.classList.add('hp-photo-back');popup.dialog.querySelector('.hp-popup-header').prepend(back);
-                const choose=action('Select photo',()=>{onSelect(image);popup.close();});choose.classList.add('hp-select-photo');
-                const check=document.createElement('span');check.textContent='✓ ';check.style.color='#74d78a';choose.prepend(check);
-                popup.content.append(choose,large);
+                root.replaceChildren();const large=document.createElement('img');large.src=image;large.alt='Selected portrait';large.className='hp-selected-photo';const back=action('Back',render);back.classList.add('hp-photo-back');
+                const choose=action('Select photo',()=>{onSelect(image);if(popup)popup.close();else render();});choose.classList.add('hp-select-photo');const check=document.createElement('span');check.textContent='✓ ';check.style.color='#74d78a';choose.prepend(check);
+                if(popup){popup.dialog.querySelector('.hp-popup-header').prepend(back);root.append(choose,large);}else{const tools=document.createElement('div');tools.className='hp-photo-inline-tools';tools.append(back,choose);root.append(tools,large);}
             });view.classList.add('hp-photo-view');view.replaceChildren(thumb);view.setAttribute('aria-label','Preview saved portrait');
-            const remove=action('Delete photo',async()=>{
-                const uses=settings().overrides.filter(item=>item.image&&safeImagePath(item.image)===safeImagePath(image));
-                if(!confirm(`Permanently delete this photo?${uses.length?' Its portrait assignments will be removed. Custom colours will be kept.':''}`))return;
-                remove.disabled=true;
-                try{await deletePortraitPhoto(image);photos=photos.filter(x=>x!==image);photoColours.delete(fullPortraitSource(image));schedule();render();}
-                catch(error){remove.disabled=false;errorLabel.textContent=error.message;}
-            });
-            const errorLabel=document.createElement('small');errorLabel.setAttribute('role','status');tile.append(view,remove,errorLabel);grid.append(tile);
+            const errorLabel=document.createElement('small');errorLabel.setAttribute('role','status');const remove=action('Delete photo',async()=>{const uses=settings().overrides.filter(item=>item.image&&safeImagePath(item.image)===safeImagePath(image));if(!confirm(`Permanently delete this photo?${uses.length?' Its portrait assignments will be removed. Custom colours will be kept.':''}`))return;remove.disabled=true;
+                try{await deletePortraitPhoto(image);photos=photos.filter(x=>x!==image);photoColours.clear();schedule();render();refreshPhotoLibraries(library);}catch(error){remove.disabled=false;errorLabel.textContent=error.message;}
+            });tile.append(view,remove,errorLabel);grid.append(tile);
         }
-        const pages=document.createElement('div');pages.className='hp-pagination';const previous=action('Previous',()=>{page--;render();}),next=action('Next',()=>{page++;render();});previous.disabled=page===0;next.disabled=(page+1)*size>=photos.length;
-        const label=document.createElement('span');label.textContent=`Page ${page+1} of ${Math.ceil(photos.length/size)}`;pages.append(previous,label,next);popup.content.append(grid,pages);
+        const pages=document.createElement('div');pages.className='hp-pagination';const previous=action('Previous',()=>{page--;render();}),next=action('Next',()=>{page++;render();});previous.disabled=page===0;next.disabled=(page+1)*size>=photos.length;const label=document.createElement('span');label.textContent=`Page ${page+1} of ${Math.ceil(photos.length/size)}`;pages.append(previous,label,next);root.append(grid,pages);
     };
-    try{photos=await listPortraitPhotos();render();}catch(error){if(popup.dialog.isConnected)popup.content.textContent=error.message;}
-    return popup;
+    const refresh=async()=>{const ticket=++request;root.textContent='Loading saved photos…';try{const result=await listPortraitPhotos();if(!alive||!root.isConnected||ticket!==request)return;photos=result;render();}catch(error){if(alive&&root.isConnected&&ticket===request){root.textContent=error.message;root.append(action('Retry',refresh));}}};
+    const library={root,refresh,cleanup(){alive=false;request++;photoLibraries.delete(library);}};photoLibraries.add(library);library.ready=refresh();return library;
 }
+async function openSavedPhotoPicker(onSelect){const popup=createPopup('Saved HivePack photos');const library=mountPhotoManager(popup.content,onSelect,popup);popup.dialog.hpCleanup=library.cleanup;await library.ready;return popup;}
 function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
     const root=document.createElement('div');root.className='hp-override-editor';
     const instruction=document.createElement('p');instruction.textContent='1. Enter the speaker name. 2. Select a card, saved photo, or upload a photo. 3. Click Add / replace override. Set an optional colour and scope alongside it.';
@@ -855,7 +848,7 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
     name.addEventListener('change',()=>{if(findOverride(name.value,settings()))load();});
     colour.addEventListener('change',()=>{enabled.checked=true;disable.hidden=false;});
     const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp,image/gif';file.className='hp-file-input';file.setAttribute('aria-label','Custom portrait image');
-    const picker=action('＋ Choose custom photo',()=>file.click());picker.classList.add('hp-photo-picker');
+    const picker=action('',()=>file.click());picker.classList.add('hp-photo-picker','hp-upload-button');picker.setAttribute('aria-label','Upload custom portrait');picker.title='Upload custom portrait';const uploadIcon=document.createElement('img');uploadIcon.src=assetUrl('upload.svg');uploadIcon.alt='';picker.append(uploadIcon);
     file.addEventListener('change',async()=>{
         const photo=file.files?.[0];if(!photo)return;
         try{
@@ -870,6 +863,7 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
         try{storeOverride(name.value,{...draft,colour:enabled.checked?colour.value:''});status.textContent=`Override saved for ${name.value.trim()}.`;root.hpOnSave?.();}
         catch(error){status.textContent=error.message;}
     });
+    add.classList.add('hp-commit-override');
     const actions=document.createElement('div');actions.className='hp-editor-actions';actions.append(picker,browse);
     const cardLabel=document.createElement('label');cardLabel.textContent='Portrait source: choose a character card, your persona, or Automatic';cardLabel.append(select);
     const cardPreview=document.createElement('img');cardPreview.className='hp-card-preview';cardPreview.alt='Selected character card';cardPreview.hidden=true;cardLabel.prepend(cardPreview);
@@ -912,7 +906,7 @@ function detectedSpeakers(){
     return [...speakers.values()].map(row=>{const portrait=resolvePortrait(row.name,s),dialogue=resolveDialogueColour(row.name,row.dialogueHex,s),thought=resolveThoughtColour(row.name,row.thoughtHex||'',s);return {...row,variants:[...row.variants],portrait,dialogue,thoughtColour:thought.colour,thoughtSource:thought.source,alias:aliasMap(s).get(normalizedName(row.name))||''};}).sort((a,b)=>a.name.localeCompare(b.name));
 }
 function refreshSpeakerManager(){
-    if(!speakerManager)return;if(!speakerManager.popup.dialog.isConnected){speakerManager=null;return;}
+    if(!speakerManager)return;if(!speakerManager.root.isConnected){speakerManager=null;return;}if(speakerManager.root.closest('[role="tabpanel"]')?.hidden)return;
     const rows=detectedSpeakers(),signature=JSON.stringify(rows);if(signature===speakerManager.signature)return;speakerManager.signature=signature;
     const grid=speakerManager.grid;grid.replaceChildren();speakerManager.status.textContent=`${rows.length} speaker${rows.length===1?'':'s'} detected in this chat`;
     if(!rows.length){grid.textContent='Speakers will appear here when the chat contains named thoughts or dialogue.';return;}
@@ -926,21 +920,19 @@ function refreshSpeakerManager(){
         card.append(portrait,name,variants,colours,manage,alias,saveAlias);grid.append(card);
     }
 }
-function openSpeakerManager(){speakerManager?.popup.close();const popup=createPopup('HivePack Speaker Manager','hp-picker-dialog hp-speaker-manager');const status=document.createElement('p'),grid=document.createElement('div');grid.className='hp-speaker-grid';popup.content.append(status,grid);speakerManager={popup,status,grid,signature:null};refreshSpeakerManager();}
+function mountSpeakerManager(root){const status=document.createElement('p'),grid=document.createElement('div');grid.className='hp-speaker-grid';root.append(status,grid);speakerManager={root,status,grid,signature:null};refreshSpeakerManager();}
 function addSpeakerManagerButton(){
-    const menu=document.getElementById('extensionsMenu');if(!menu)return;
-    for(const [id,label,iconClass,callback] of [['hp-speaker-manager-button','HivePack Speaker Manager','fa-users',openSpeakerManager],['hp-settings-menu-button','HivePack Settings','fa-sliders',openModernSettings]]){
-        if(document.getElementById(id))continue;const entry=document.createElement('div');entry.id=id;entry.className='list-group-item flex-container flexGap5 hp-wand-entry';entry.setAttribute('role','button');entry.setAttribute('tabindex','0');entry.addEventListener('click',callback);entry.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();callback();}});const icon=document.createElement('i');icon.className='fa-solid '+iconClass+' extensionsMenuExtensionButton';const text=document.createElement('span');text.textContent=label;entry.append(icon,text);menu.append(entry);
-    }
+    document.getElementById('hp-speaker-manager-button')?.remove();const menu=document.getElementById('extensionsMenu');if(!menu||document.getElementById('hp-settings-menu-button'))return;
+    const entry=document.createElement('div');entry.id='hp-settings-menu-button';entry.className='list-group-item flex-container flexGap5 hp-wand-entry';entry.setAttribute('role','button');entry.setAttribute('tabindex','0');entry.addEventListener('click',openModernSettings);entry.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openModernSettings();}});const icon=document.createElement('i');icon.className='fa-solid fa-sliders extensionsMenuExtensionButton';const text=document.createElement('span');text.textContent='HivePack Settings';entry.append(icon,text);menu.append(entry);
 }
 
 const settingsViews=new Set();
 let modernSettings=null,launcherDrag=null;
-function syncSettingsForms(){const s=settings();document.querySelectorAll('[data-rpp]').forEach(field=>{const key=field.dataset.rpp;if(!(key in s)||document.activeElement===field)return;if(field.type==='checkbox')field.checked=Boolean(s[key]);else if(typeof s[key]!=='object')field.value=s[key];if(key==='injectionDepth')field.disabled=s.injectionMode==='append';if(key==='dialoguePortraitHover')field.disabled=!s.enabled;});}
+function syncSettingsForms(){const s=settings();document.querySelectorAll('[data-rpp]').forEach(field=>{const key=field.dataset.rpp;if(!(key in s))return;if(field.getAttribute('role')==='switch'){updatePowerSwitch(field,s.masterEnabled);return;}if(document.activeElement===field)return;if(field.type==='checkbox')field.checked=Boolean(s[key]);else if(typeof s[key]!=='object')field.value=s[key];if(key==='injectionDepth')field.disabled=s.injectionMode==='append';if(key==='dialoguePortraitHover')field.disabled=!s.enabled;});}
 function viewportSize(){return {width:window.innerWidth||1024,height:window.innerHeight||768};}
 function placeLauncher(button){
     const position=settings().launcherPosition,box=viewportSize();if(position){button.style.right='auto';button.style.bottom='auto';if(button.parentElement!==document.body)document.body.append(button);button.classList.add('hp-launcher-floating');button.style.left=`${Math.max(6,Math.min(box.width-50,Number(position.x)*(box.width-44)))}px`;button.style.top=`${Math.max(6,Math.min(box.height-50,Number(position.y)*(box.height-44)))}px`;}
-    else {button.classList.remove('hp-launcher-floating');button.style.removeProperty('left');button.style.removeProperty('top');button.style.removeProperty('right');button.style.removeProperty('bottom');const input=document.getElementById('send_textarea');if(input&&input.nextElementSibling!==button)input.after(button);else if(!input){if(button.parentElement!==document.body)document.body.append(button);button.classList.add('hp-launcher-floating');button.style.right='18px';button.style.bottom='88px';}}
+    else {button.classList.remove('hp-launcher-floating');button.style.removeProperty('left');button.style.removeProperty('top');button.style.removeProperty('right');button.style.removeProperty('bottom');const input=document.getElementById('send_textarea');if(input&&input.nextElementSibling!==button)input.after(button);else if(!input){if(button.parentElement!==document.body)document.body.append(button);button.classList.add('hp-launcher-floating');button.style.right='38px';button.style.bottom='88px';}}
 }
 function saveLauncherPosition(button){const rect=button.getBoundingClientRect(),box=viewportSize();settings().launcherPosition={x:Math.max(0,Math.min(1,rect.left/Math.max(1,box.width-44))),y:Math.max(0,Math.min(1,rect.top/Math.max(1,box.height-44)))};context().saveSettingsDebounced();}
 function ensureSettingsLauncher(){
@@ -957,31 +949,51 @@ function openModernSettings(){
     const popup=createPopup('HivePack settings','hp-modern-dialog');modernSettings=popup;
     const brand=popup.dialog.querySelector('.hp-popup-header b');brand.className='hp-modern-brand';const logo=document.createElement('img');logo.src=assetUrl('hive.svg');logo.alt='';brand.prepend(logo);
     const shell=document.createElement('div');shell.className='hp-modern-shell';const navigation=document.createElement('nav');navigation.className='hp-modern-nav';navigation.setAttribute('aria-label','HivePack settings sections');const main=document.createElement('div');main.className='hp-modern-main';const aside=document.createElement('aside');aside.className='hp-modern-preview';const previewTitle=document.createElement('b');previewTitle.textContent='Live preview';const previewHint=document.createElement('p');previewHint.textContent='Narration, dialogue, and thoughts';aside.append(previewTitle,previewHint);shell.append(navigation,main,aside);popup.content.append(shell);
-    const host=document.createElement('div');main.append(host);const controls=addSettings(host,true),area=controls.querySelector('.hp-settings-content'),tabs=new Map();
-    for(const [id,title] of [['general','General'],['appearance','Appearance'],['speakers','Speakers'],['photos','Photos'],['prompt','Prompt']]){const page=document.createElement('section');page.className='hp-settings-page';page.id=`hp-page-${id}`;page.setAttribute('role','tabpanel');const heading=document.createElement('h2');heading.textContent=title;page.append(heading);main.append(page);const tab=action(title,()=>activate(id));tab.setAttribute('role','tab');tab.setAttribute('aria-controls',page.id);tab.id=`hp-tab-${id}`;page.setAttribute('aria-labelledby',tab.id);navigation.append(tab);tabs.set(id,{tab,page});}
+    const host=document.createElement('div');main.append(host);const controls=addSettings(host),area=controls.querySelector('.hp-settings-content'),tabs=new Map();
+    for(const [id,title] of [['general','General'],['appearance','Appearance'],['speakers','Speakers'],['photos','Photos'],['prompt','Prompt']]){const page=document.createElement('section');page.className='hp-settings-page';page.hidden=true;page.id=`hp-page-${id}`;page.setAttribute('role','tabpanel');const heading=document.createElement('h2');heading.textContent=title;page.append(heading);main.append(page);const tab=action(title,()=>activate(id));tab.setAttribute('role','tab');tab.setAttribute('aria-controls',page.id);tab.id=`hp-tab-${id}`;page.setAttribute('aria-labelledby',tab.id);navigation.append(tab);tabs.set(id,{tab,page});}
     navigation.setAttribute('role','tablist');navigation.setAttribute('aria-orientation','vertical');
-    function activate(id){for(const [key,{tab,page}] of tabs){page.hidden=key!==id;tab.setAttribute('aria-selected',String(key===id));tab.tabIndex=key===id?0:-1;}settings().lastSettingsTab=id;}
+    function activate(id){for(const [key,{tab,page}] of tabs){page.hidden=key!==id;tab.setAttribute('aria-selected',String(key===id));tab.tabIndex=key===id?0:-1;}settings().lastSettingsTab=id;if(id==='speakers')refreshSpeakerManager();if(id==='photos'&&!photoBrowser)photoBrowser=mountPhotoManager(photoHost,image=>openOverrideDialog('','all',{image,scope:''}));}
     navigation.addEventListener('keydown',event=>{const keys=[...tabs.keys()],current=keys.indexOf(settings().lastSettingsTab);if(['ArrowDown','ArrowRight','ArrowUp','ArrowLeft','Home','End'].includes(event.key)){event.preventDefault();const index=event.key==='Home'?0:event.key==='End'?keys.length-1:(current+(['ArrowDown','ArrowRight'].includes(event.key)?1:keys.length-1))%keys.length;activate(keys[index]);tabs.get(keys[index]).tab.focus();}});
     for(const child of [...area.children]){const group=child.matches('.hp-master-toggle,.hp-checkbox-grid')?'general':child.matches('.hp-appearance')?'appearance':child.matches('.hp-prompt-settings')?'prompt':'speakers';tabs.get(group).page.append(child);}
     const appearance=tabs.get('appearance').page.querySelector('.hp-appearance');appearance.open=true;appearance.querySelector('summary').hidden=true;const preview=appearance.querySelector('.hp-preview');const title=preview.previousElementSibling;if(title?.textContent==='Live styling preview')title.remove();aside.append(preview);const off=document.createElement('p');off.className='hp-preview-off';off.textContent='Enable HivePack to show the preview.';aside.append(off);
     const prompt=tabs.get('prompt').page.querySelector('.hp-prompt-settings');prompt.open=true;prompt.querySelector('summary').hidden=true;
     const general=tabs.get('general').page;general.append(action('Reset floating button position',()=>{settings().launcherPosition=null;context().saveSettingsDebounced();const button=document.getElementById('hp-settings-launcher');button.style.right='';button.style.bottom='';placeLauncher(button);}));
-    tabs.get('speakers').page.insertBefore(action('Open speaker manager',openSpeakerManager),tabs.get('speakers').page.children[1]||null);
-    const photos=tabs.get('photos').page,photoHelp=document.createElement('p');photoHelp.textContent='Browse, reuse, or delete saved portraits. Choose a photo to assign it to a speaker.';photos.append(photoHelp,action('Browse saved photos',()=>openSavedPhotoPicker(image=>openOverrideDialog('','all',{image,scope:''}))),action('Upload a photo for a speaker',()=>openOverrideDialog('','upload')));
+    const speakers=tabs.get('speakers').page,configuration=document.createElement('details');configuration.className='hp-speaker-configuration';const configTitle=document.createElement('summary');configTitle.textContent='Add speaker overrides & aliases';configuration.append(configTitle);for(const child of [...speakers.children])if(child.tagName!=='H2')configuration.append(child);const managerRoot=document.createElement('div');managerRoot.className='hp-speaker-manager hp-embedded-manager';speakers.append(managerRoot,configuration);mountSpeakerManager(managerRoot);
+    const fields=document.createElement('div');fields.className='hp-appearance-fields';for(const child of [...appearance.children])if(child.tagName==='LABEL')fields.append(child);appearance.prepend(fields);
+    const photos=tabs.get('photos').page,photoHost=document.createElement('div'),photoTools=document.createElement('div');photoHost.className='hp-inline-photo-manager';photoTools.className='hp-editor-actions';let photoBrowser=null;
+    const upload=action('',()=>openOverrideDialog('','upload'));upload.classList.add('hp-upload-button');upload.title='Upload portrait for a speaker';upload.setAttribute('aria-label','Upload portrait for a speaker');const uploadIcon=document.createElement('img');uploadIcon.src=assetUrl('upload.svg');uploadIcon.alt='';upload.append(uploadIcon);photoTools.append(upload,action('Refresh photos',()=>photoBrowser?.refresh()));photos.append(photoTools,photoHost);
     const size=settings().panelSize;if(size){popup.dialog.style.width=`${Math.min(viewportSize().width*.96,Math.max(600,size.width))}px`;popup.dialog.style.height=`${Math.min(viewportSize().height*.94,Math.max(420,size.height))}px`;}
     let panelBounds=popup.dialog.getBoundingClientRect();const rememberSize=()=>{const rect=popup.dialog.getBoundingClientRect();if(rect.width>0&&rect.height>0)panelBounds={width:rect.width,height:rect.height};};popup.dialog.addEventListener('pointerup',rememberSize);const observer=typeof ResizeObserver!=='undefined'?new ResizeObserver(rememberSize):null;observer?.observe(popup.dialog);
-    popup.dialog.hpCleanup=()=>{controls.hpCleanup?.();rememberSize();observer?.disconnect();if(panelBounds.width>0&&panelBounds.height>0){settings().panelSize={width:panelBounds.width,height:panelBounds.height};context().saveSettingsDebounced();}modernSettings=null;};
+    popup.dialog.hpCleanup=()=>{photoBrowser?.cleanup();if(speakerManager?.root===managerRoot)speakerManager=null;popup.dialog.querySelectorAll('.hp-sortable').forEach(list=>list.hpStop?.());controls.hpCleanup?.();rememberSize();observer?.disconnect();if(panelBounds.width>0&&panelBounds.height>0){settings().panelSize={width:panelBounds.width,height:panelBounds.height};context().saveSettingsDebounced();}modernSettings=null;};
     activate(tabs.has(settings().lastSettingsTab)?settings().lastSettingsTab:'general');syncSettingsForms();refreshLivePreview();
 }
 
-function addSettings(target=null,modern=false){
-    const host=target||document.querySelector('#extensions_settings'),id=modern?'hp-modern-controls':'hivepack-settings';if(!host||document.getElementById(id))return;
-    const panel=document.createElement('div');panel.id=id;panel.className='extension_container';
-    panel.innerHTML='<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>HivePack</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content hp-settings-content"></div></div>';
-    if(modern)panel.innerHTML='<div class="hp-settings-content"></div>';
+function updatePowerSwitch(button,on){button.setAttribute('aria-checked',String(Boolean(on)));button.classList.toggle('is-on',Boolean(on));button.querySelector('.hp-power-status').textContent=on?'On':'Off';button.title=on?'Turn HivePack off':'Turn HivePack on';}
+function renderSortablePriority(list,key,getOrder,labels,save){
+    list.hpStop?.();list.replaceChildren();list.classList.add('hp-sortable');list.setAttribute('role','list');let drag=null;
+    const commit=order=>{settings()[key]=order;save();};
+    const finish=(cancel=false)=>{if(!drag)return;const current=drag;drag=null;window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancelled);current.row.style.transform='';current.row.classList.remove('hp-sort-dragging');current.handle.setAttribute('aria-pressed','false');try{current.handle.releasePointerCapture?.(current.id);}catch{}
+        if(cancel){for(const source of current.original){const row=[...list.children].find(node=>node.dataset.source===source);if(row)list.append(row);}}else commit([...list.children].map(row=>row.dataset.source));
+    };
+    const up=event=>{if(drag?.id===event.pointerId)finish();},cancelled=event=>{if(drag?.id===event.pointerId)finish(true);};
+    const move=event=>{if(!drag||event.pointerId!==drag.id)return;event.preventDefault();const current=drag,desiredTop=event.clientY-current.offset,center=desiredTop+current.height/2,others=[...list.children].filter(row=>row!==current.row);const before=others.find(row=>{const rect=row.getBoundingClientRect();return center<rect.top+rect.height/2;})||null;
+        if(current.row.nextElementSibling!==before){const positions=new Map(others.map(row=>[row,row.getBoundingClientRect().top]));list.insertBefore(current.row,before);try{current.handle.setPointerCapture?.(current.id);}catch{}
+            for(const row of others){const delta=positions.get(row)-row.getBoundingClientRect().top;if(delta&&row.animate&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)row.animate([{transform:`translateY(${delta}px)`},{transform:'translateY(0)'}],{duration:150,easing:'ease-out'});}
+        }
+        const naturalTop=current.row.getBoundingClientRect().top-current.translation;current.translation=desiredTop-naturalTop;current.row.style.transform=`translateY(${current.translation}px)`;
+    };
+    list.hpStop=()=>finish(true);
+    getOrder().forEach((source,index)=>{const row=document.createElement('div');row.className='hp-priority-item';row.dataset.source=source;row.setAttribute('role','listitem');const grip=action('⠿',()=>{});grip.className='hp-sort-handle';grip.setAttribute('aria-label',`Drag ${labels[source]} to reorder`);grip.setAttribute('aria-pressed','false');const label=document.createElement('span');label.textContent=`${index+1}. ${labels[source]}`;
+        grip.addEventListener('pointerdown',event=>{if(event.button!==0)return;event.preventDefault();const rect=row.getBoundingClientRect();drag={id:event.pointerId,row,handle:grip,offset:event.clientY-rect.top,height:rect.height,translation:0,original:[...getOrder()]};row.classList.add('hp-sort-dragging');grip.setAttribute('aria-pressed','true');try{grip.setPointerCapture?.(event.pointerId);}catch{}window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancelled);});
+        const shift=delta=>{const order=getOrder(),at=order.indexOf(source),to=Math.max(0,Math.min(order.length-1,at+delta));order.splice(at,1);order.splice(to,0,source);commit(order);};const upButton=action('↑',()=>shift(-1)),downButton=action('↓',()=>shift(1));upButton.disabled=index===0;downButton.disabled=index===getOrder().length-1;upButton.setAttribute('aria-label',`Move ${labels[source]} earlier`);downButton.setAttribute('aria-label',`Move ${labels[source]} later`);row.append(grip,label,upButton,downButton);list.append(row);
+    });
+}
+
+function addSettings(host){
+    if(!host||document.getElementById('hp-modern-controls'))return;const panel=document.createElement('div');panel.id='hp-modern-controls';panel.className='extension_container';panel.innerHTML='<div class="hp-settings-content"></div>';
     const area=panel.querySelector('.hp-settings-content');
     const save=()=>{context().saveSettingsDebounced();syncSettingsForms();for(const refresh of settingsViews)refresh();schedule();};
-    const master=document.createElement('label');master.className='checkbox_label hp-master-toggle';const masterInput=document.createElement('input');masterInput.type='checkbox';masterInput.dataset.rpp='masterEnabled';masterInput.checked=settings().masterEnabled;master.append(masterInput,document.createTextNode('Enable HivePack'));masterInput.addEventListener('change',()=>{settings().masterEnabled=masterInput.checked;save();});area.append(master);if(!modern){const open=action('Open HivePack panel',openModernSettings);open.classList.add('hp-open-modern');area.append(open);}
+    const master=document.createElement('div');master.className='hp-master-toggle';const power=action('',()=>{settings().masterEnabled=!settings().masterEnabled;save();});power.classList.add('hp-power-switch');power.dataset.rpp='masterEnabled';power.setAttribute('role','switch');power.setAttribute('aria-label','Enable HivePack');const powerIcon=document.createElement('img');powerIcon.src=assetUrl('power.svg');powerIcon.alt='';const powerText=document.createElement('span');powerText.textContent='HivePack';const powerStatus=document.createElement('strong');powerStatus.className='hp-power-status';power.append(powerIcon,powerText,powerStatus);updatePowerSwitch(power,settings().masterEnabled);master.append(power);area.append(master);
     const checks=document.createElement('div');checks.className='hp-checkbox-grid';area.append(checks);
     for(const [key,title] of Object.entries({speakerFocus:'Dim other text when hovering a speaker',afterGeneration:'Apply styling after generation finishes (prevents flashing)',monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',samplePortrait:'Sample portrait colour',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)',dialogueColours:'Colour character dialogue (<c>)',dialoguePortraitHover:'Show hovered speaker portrait (dialogue and thoughts, Ripple only)'})){
         const label=document.createElement('label');label.className='checkbox_label';const input=document.createElement('input');input.type='checkbox';input.dataset.rpp=key;input.checked=Boolean(settings()[key]);label.append(input,document.createTextNode(title));input.addEventListener('change',()=>{settings()[key]=input.checked;save();});checks.append(label);
@@ -999,26 +1011,11 @@ function addSettings(target=null,modern=false){
     selection('portraitCrop','Portrait crop',[['bubble','Match bubble height'],['original','Original image proportions'],['square','1:1'],['portrait','2:3'],['landscape','3:2']]);
     selection('missingPortrait','Missing portrait appearance',[['picker','Compact photo picker'],['initials','Speaker initials'],['silhouette','Silhouette']]);
     const priorityHeading=document.createElement('b');priorityHeading.textContent='Colour priority (first available wins)';appearance.append(priorityHeading);
-    const priorities=document.createElement('div');appearance.append(priorities);
-    function renderPriority(){
-        priorities.replaceChildren();priorities.className='hp-priority-list';let dragged=null;
-        const move=(source,target)=>{const order=priority(settings());order.splice(order.indexOf(source),1);order.splice(target,0,source);settings().colourPriority=order;save();renderPriority();};
-        priority(settings()).forEach((source,index)=>{const row=document.createElement('div');row.className='hp-priority-item';row.draggable=true;row.textContent=`⠿ ${index+1}. ${sourceLabels[source]}`;
-            row.addEventListener('dragstart',e=>{dragged=source;e.dataTransfer?.setData('text/plain',source);});
-            row.addEventListener('dragover',e=>e.preventDefault());row.addEventListener('drop',e=>{e.preventDefault();const value=dragged||e.dataTransfer?.getData('text/plain');if(sources.includes(value))move(value,index);});
-            const up=action('↑',()=>move(source,Math.max(0,index-1))),down=action('↓',()=>move(source,Math.min(sources.length-1,index+1)));up.disabled=index===0;down.disabled=index===sources.length-1;up.setAttribute('aria-label',`Move ${sourceLabels[source]} earlier`);down.setAttribute('aria-label',`Move ${sourceLabels[source]} later`);row.append(up,down);priorities.append(row);
-        });
-    }renderPriority();
+    const priorities=document.createElement('div');priorities.className='hp-priority-list';appearance.append(priorities);
+    function renderPriority(){renderSortablePriority(priorities,'colourPriority',()=>priority(settings()),sourceLabels,save);}renderPriority();
     const dialogueHeading=document.createElement('b');dialogueHeading.textContent='Dialogue colour priority (first available wins)';appearance.append(dialogueHeading);
     const dialogueList=document.createElement('div');dialogueList.className='hp-dialogue-priority';appearance.append(dialogueList);
-    function renderDialoguePriority(){dialogueList.replaceChildren();let dragged=null;
-        const labels={override:'Override',photo:'Photo colour',model:'HEX in message'};
-        const move=(source,index)=>{const order=dialoguePriority(settings());order.splice(order.indexOf(source),1);order.splice(index,0,source);settings().dialoguePriority=order;save();renderDialoguePriority();};
-        dialoguePriority(settings()).forEach((source,index)=>{const row=document.createElement('div');row.className='hp-priority-item';row.draggable=true;row.textContent=`⠿ ${index+1}. ${labels[source]}`;
-            row.addEventListener('dragstart',e=>{dragged=source;e.dataTransfer?.setData('text/plain',source);});row.addEventListener('dragover',e=>e.preventDefault());row.addEventListener('drop',e=>{e.preventDefault();const value=dragged||e.dataTransfer?.getData('text/plain');if(['override','photo','model'].includes(value))move(value,index);});
-            const up=action('↑',()=>move(source,index-1)),down=action('↓',()=>move(source,index+1));up.disabled=index===0;down.disabled=index===2;up.setAttribute('aria-label',`Move dialogue ${labels[source]} earlier`);down.setAttribute('aria-label',`Move dialogue ${labels[source]} later`);row.append(up,down);dialogueList.append(row);
-        });
-    }renderDialoguePriority();
+    function renderDialoguePriority(){renderSortablePriority(dialogueList,'dialoguePriority',()=>dialoguePriority(settings()),{override:'Override',photo:'Photo colour',model:'HEX in message'},save);}renderDialoguePriority();
     const previewTitle=document.createElement('b');previewTitle.textContent='Live styling preview';appearance.append(previewTitle);
     const preview=document.createElement('div');preview.className='hp-preview';preview.innerHTML='<span class="hp-monologue"><span class="hp-monologue-content"><span class="hp-monologue-name"></span><span class="hp-monologue-body">An ordinary thought, <strong>an important detail</strong>, and <span class="hp-quote">“a remembered voice.”</span></span><span class="hp-monologue-name hp-monologue-footer"></span></span></span>';
     preview.innerHTML='<p class="hp-preview-narration">The corridor grows quiet. A lantern flickers beyond the door.</p><p class="hp-preview-dialogue"></p>'+preview.innerHTML+'<span class="hp-monologue hp-preview-missing" data-hp-preview-missing="true" data-hp-speaker="Unassigned speaker" data-hp-explicit-colour="#BD9BEA"><span class="hp-monologue-content"><span class="hp-monologue-name">◈ Unassigned speaker</span><span class="hp-monologue-body">This thought has no associated portrait.</span><span class="hp-monologue-name hp-monologue-footer">◈ Unassigned speaker</span></span></span>';preview.querySelector('.hp-monologue').classList.add('hp-preview-primary');appearance.append(preview);
@@ -1046,7 +1043,7 @@ function addSettings(target=null,modern=false){
 }
 
 function init() {
-    addSettings();addSpeakerManagerButton();
+    document.getElementById('hivepack-settings')?.remove();addSpeakerManagerButton();
     const c = context();
     const events = c.eventTypes ?? c.event_types;
     if(events.GENERATION_STARTED)c.eventSource.on(events.GENERATION_STARTED,(type,options,dryRun)=>{

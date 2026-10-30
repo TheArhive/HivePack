@@ -410,3 +410,40 @@ input[type="color"]::-webkit-color-swatch { border:0;border-radius:1px; }
 
 .hp-wand-entry:hover { background:rgba(160,132,190,.12)!important; }
 .hp-open-modern { display:block;width:fit-content;margin:10px auto; }
+
+/* Compact, integrated settings. */
+.hp-modern-dialog { width:min(1240px,96vw); }
+.hp-modern-shell { grid-template-columns:148px minmax(280px,1fr) 350px; }
+.hp-modern-main { container-type:inline-size; }
+.hp-modern-dialog .hp-checkbox-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:7px; }
+.hp-modern-dialog .checkbox_label { padding:6px 8px;font-size:.82rem;line-height:1.4; }
+.hp-appearance-fields { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
+.hp-appearance-fields > label { min-width:0;margin:0;font-size:.82rem; }
+.hp-modern-dialog .hp-appearance-fields .text_pole { margin-top:4px;padding:6px 8px; }
+.hp-speaker-configuration { margin-top:20px;padding-top:14px;border-top:1px solid #51415e; }
+.hp-speaker-configuration > summary { cursor:pointer;color:#d4b3ed;font-weight:600;margin-bottom:12px; }
+.hp-embedded-manager > p { font-size:.85rem;color:#b5a8c4; }
+.hp-photo-inline-tools { display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0; }
+.hp-photo-inline-tools .menu_button { width:fit-content;margin:0; }
+.hp-modern-dialog .hp-photo-gallery { grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); }
+.hp-upload-button { box-sizing:border-box;display:inline-flex!important;align-items:center;justify-content:center;width:36px!important;height:36px!important;min-height:36px!important;padding:7px!important;flex:0 0 36px; }
+.hp-upload-button img { display:block;width:20px!important;height:20px!important;margin:0;object-fit:contain;filter:invert(.9); }
+.hp-modern-dialog .hp-commit-override,.hp-override-dialog .hp-commit-override { background:linear-gradient(110deg,#50385f,#3b2c48);border-color:#9772b1;color:#f0dfff; }
+.hp-modern-dialog .hp-commit-override:hover,.hp-override-dialog .hp-commit-override:hover { background:#66437a; }
+.hp-modern-dialog .hp-master-toggle { display:flex;justify-content:center;align-items:center;padding:0;margin:0 0 16px;background:transparent;border:0; }
+.hp-modern-dialog .hp-power-switch { display:flex;align-items:center;justify-content:center;gap:14px;width:min(100%,280px);min-height:66px;padding:13px 20px;border-radius:14px;border:1px solid #9b99a1;background:linear-gradient(120deg,#a9a7af,#85838c);color:#1b1821;box-shadow:none;font-size:1.05rem; }
+.hp-modern-dialog .hp-power-switch.is-on { background:linear-gradient(120deg,#a7dfb3,#70b986);border-color:#b0e9bc;color:#102a19;box-shadow:0 3px 18px #4c9f6530; }
+.hp-power-switch img { width:29px;height:29px;filter:none; }
+.hp-power-status { margin-left:auto;text-transform:uppercase;letter-spacing:.07em;font-size:.8rem; }
+#hp-settings-launcher { transition:none!important;animation:none!important;margin:0 20px 0 4px!important; }
+#nonQRFormItems:has(> #hp-settings-launcher:not(.hp-launcher-floating)) > #send_textarea { min-width:0;flex:1 1 0!important;width:0!important; }
+#nonQRFormItems:has(> #hp-settings-launcher:not(.hp-launcher-floating)) > #rightSendForm { flex:0 0 auto; }
+.hp-sortable { user-select:none; }
+.hp-sort-handle { flex:0 0 24px;touch-action:none;cursor:grab;border:0;border-radius:4px;padding:3px;background:transparent;color:#c6a4e0;font-size:21px;line-height:1; }
+.hp-sort-handle:focus-visible { outline:1px solid #d6b3ee; }
+.hp-priority-item { position:relative;transition:background-color 120ms,border-color 120ms; }
+.hp-priority-item > span { flex:1;min-width:0; }
+.hp-priority-item.hp-sort-dragging { z-index:5;transition:none!important;background:#573b6b!important;border-color:#c698e5!important;box-shadow:0 6px 18px #0007; }
+@container(max-width:340px) { .hp-modern-dialog .hp-checkbox-grid,.hp-appearance-fields { grid-template-columns:1fr; } }
+@media(max-width:1000px) { .hp-modern-shell { grid-template-columns:120px minmax(240px,1fr);grid-template-rows:minmax(0,1fr) auto; } .hp-modern-preview { grid-column:1/-1;border-left:0;border-top:1px solid #42364e;max-height:300px; } }
+@media(max-width:600px) { .hp-modern-preview { max-height:none; } }
