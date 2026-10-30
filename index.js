@@ -1,6 +1,7 @@
 import { user_avatar, extension_prompt_types, extension_prompt_roles, MAX_INJECTION_DEPTH } from '../../../../script.js';
 
 const KEY = 'hivepack';
+const assetUrl=name=>new URL(`assets/${name}`,import.meta.url).href;
 const DEFAULT_INSTRUCTION = `<ChatColor>
 Assign a distinct, readable hex color to every characters dialogue using: <c>Name | #Hex: "Dialogue here"</c>. Once assigned, a character's color is LOCKED for the entire story. Wrap ALL dialogue with these blocks.
 Eg: <c>Tomy | #Hex: "Do i have to explain this again??"</c>
@@ -49,7 +50,7 @@ function addPromptSettings(area,save){
     toggle.addEventListener('change',()=>{settings().promptEnabled=toggle.checked;save();});mode.addEventListener('change',()=>{settings().injectionMode=mode.value;state();save();});depth.addEventListener('input',()=>{settings().injectionDepth=injectionDepth(depth.value);save();});depth.addEventListener('change',()=>{depth.value=settings().injectionDepth;});text.addEventListener('input',()=>{settings().instructionPrompt=text.value;save();});
     if(typeof context().setExtensionPrompt!=='function'||!context().extensionPrompts){toggle.disabled=true;help.textContent='Prompt injection is unavailable: this SillyTavern version does not expose the extension prompt API.';}
 }
-const defaults = { promptEnabled: false, injectionMode: 'depth', injectionDepth: 4, instructionPrompt: DEFAULT_INSTRUCTION, masterEnabled: true, afterGeneration: false, samplingMethod: 'average', enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble', dialogueColours: true, dialoguePortraitHover: false, dialoguePriority: ['override','model','photo'] };
+const defaults = { portraitLinger: 500, speakerFocus: true, promptEnabled: false, injectionMode: 'depth', injectionDepth: 4, instructionPrompt: DEFAULT_INSTRUCTION, masterEnabled: true, afterGeneration: false, samplingMethod: 'average', enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble', dialogueColours: true, dialoguePortraitHover: false, dialoguePriority: ['override','model','photo'] };
 let queued = false;
 let revision = 0;
 let lastAvatar;
@@ -69,13 +70,21 @@ function schedule() {
 }
 function refresh() {
     const s = settings();
-    syncPromptInjection();
+    syncPromptInjection();addSpeakerManagerButton();
+    if (user_avatar !== lastAvatar) {
+        lastAvatar = user_avatar;
+        revision++;
+        // Original image, matching Ripple's preference for full-resolution portraits.
+        avatarUrl = user_avatar ? new URL(`User Avatars/${encodeURIComponent(user_avatar)}`, document.baseURI).href : '';
+        if (avatarUrl) avatarUrl += `?rpp=${revision}`;
+    }
+    refreshSpeakerManager();
     const previewHost=document.querySelector('.hp-preview');if(previewHost)previewHost.hidden=!s.masterEnabled;
     if(!s.masterEnabled){
-        restoreThoughts(document);document.querySelectorAll('#chat .mes_text').forEach(unwrapDialogue);
+        clearAllSpeakerHovers();restoreThoughts(document);document.querySelectorAll('#chat .mes_text').forEach(unwrapDialogue);
         document.querySelectorAll('#chat .rpp-column,#chat .hp-toggle-message-thoughts').forEach(node=>node.remove());for(const name of ['rpp-enabled','hivepack-hover'])if(document.body.classList.contains(name))document.body.classList.remove(name);return;
     }
-    if(s.afterGeneration)document.querySelectorAll('#chat > .mes').forEach(mes=>{if(messageIsGenerating(mes)){restoreThoughts(mes);const holder=mes.querySelector('.mes_text');if(holder)unwrapDialogue(holder);dialogueHover.delete(mes);}});
+    if(s.afterGeneration)document.querySelectorAll('#chat > .mes').forEach(mes=>{if(messageIsGenerating(mes)){restoreThoughts(mes);const holder=mes.querySelector('.mes_text');if(holder)unwrapDialogue(holder);clearSpeakerHover(mes);}});
     const active = s.enabled && document.body.classList.contains('ripplestyle') && Boolean(user_avatar);
     if (document.body.classList.contains('rpp-enabled') !== Boolean(active)) {
         document.body.classList.toggle('rpp-enabled', Boolean(active));
@@ -85,18 +94,12 @@ function refresh() {
         if (Number.isFinite(n) && n >= 40 && n <= 400) document.body.style.setProperty(variable, `${n}px`);
         else document.body.style.removeProperty(variable);
     }
-    if (user_avatar !== lastAvatar) {
-        lastAvatar = user_avatar;
-        revision++;
-        // Original image, matching Ripple's preference for full-resolution portraits.
-        avatarUrl = user_avatar ? new URL(`User Avatars/${encodeURIComponent(user_avatar)}`, document.baseURI).href : '';
-        if (avatarUrl) avatarUrl += `?rpp=${revision}`;
-    }
     applyAppearance(s);
     learnColours(s);
     refreshDialogue(s);
     refreshMonologues(s);
     refreshMessageButtons(s);
+    document.querySelectorAll('#chat > .mes').forEach(mes=>{const node=dialogueHover.get(mes);if(node?.isConnected)focusSpeaker(mes,node.dataset.hpSpeaker);else if(node)clearSpeakerHover(mes);});
     refreshLivePreview();
     document.querySelectorAll('#chat > .mes').forEach(mes => {
         const eligible = active && !(s.afterGeneration&&messageIsGenerating(mes)) && mes.getAttribute('is_user') === 'false' && mes.getAttribute('is_system') !== 'true';
@@ -105,20 +108,24 @@ function refresh() {
         if (!column) {
             column = document.createElement('div');
             column.className = 'rpp-column';
-            column.setAttribute('aria-hidden', 'true');
+            column.setAttribute('aria-hidden', 'false');
             const img = document.createElement('img');
             img.className = 'rpp-image';
             img.alt = '';
             img.loading = 'lazy';
             img.decoding = 'async';
-            img.addEventListener('error', () => { if(img.getAttribute('src')!==avatarUrl){dialogueHover.delete(mes);img.setAttribute('src',avatarUrl);}else img.style.visibility = 'hidden'; });
+            img.addEventListener('error', () => { if(img.getAttribute('src')!==avatarUrl){clearSpeakerHover(mes);img.setAttribute('src',avatarUrl);}else img.style.visibility = 'hidden'; });
             img.addEventListener('load', () => { img.style.visibility = ''; });
-            column.append(img);
+            const name=document.createElement('span');name.className='hp-side-speaker';name.hidden=true;column.append(img,name);
             mes.append(column);
         }
         const img = column.firstElementChild;
-        const hovered=dialogueHover.get(mes);const source=s.dialogueColours && s.dialoguePortraitHover && hovered?.isConnected?resolvePortrait(hovered.dataset.hpSpeaker,s):'';
+        const hovered=dialogueHover.get(mes),hold=portraitHolds.get(mes),swapping=s.dialoguePortraitHover&&s.enabled;
+        const live=hovered?.isConnected?hovered:null;const source=swapping?(live?resolvePortrait(live.dataset.hpSpeaker,s):hold?.src):'';
         const target=source||avatarUrl;if(img.getAttribute('src')!==target)img.setAttribute('src',target);
+        const caption=column.querySelector('.hp-side-speaker');caption.hidden=!live||!swapping||!source;
+        if(live&&swapping){caption.textContent=live.dataset.hpSpeaker;caption.style.color=live.classList.contains('hp-monologue')?(resolveColour(live,s)||'#91a8c5'):(resolveDialogueColour(live.dataset.hpSpeaker,live.dataset.hpExplicitColour,s).colour||'#91a8c5');}
+
     });
 }
 
@@ -133,6 +140,31 @@ function messageIsGenerating(mes){
 }
 // Decorate existing text nodes only. Never rebuild a message or write chat text.
 const dialogueRender=new WeakMap(),dialogueHover=new WeakMap();
+const portraitHolds=new WeakMap(),portraitTimers=new Map();
+function clearFocus(mes){const holder=mes.querySelector('.mes_text');if(!holder)return;if(holder.classList.contains('hp-speaker-focus'))holder.classList.remove('hp-speaker-focus');holder.querySelectorAll('.hp-speaker-active').forEach(node=>node.classList.remove('hp-speaker-active'));holder.querySelectorAll('.hp-focus-text').forEach(span=>span.replaceWith(...Array.from(span.childNodes)));}
+function focusSpeaker(mes,speaker){
+    const s=settings(),holder=mes.querySelector('.mes_text');if(!holder)return;
+    if(!s.speakerFocus){clearFocus(mes);return;}
+    const key=canonicalName(speaker,s);if(!holder.classList.contains('hp-speaker-focus'))holder.classList.add('hp-speaker-focus');
+    holder.querySelectorAll('.hp-dialogue,.hp-monologue').forEach(node=>node.classList.toggle('hp-speaker-active',canonicalName(node.dataset.hpSpeaker,s)===key));
+    const walker=document.createTreeWalker(holder,NodeFilter.SHOW_TEXT),nodes=[];while(walker.nextNode()){const node=walker.currentNode;if(node.data.trim()&&!node.parentElement?.closest('.hp-dialogue,.hp-monologue,.hp-dialogue-header,.hp-focus-text,pre,code,script,style'))nodes.push(node);}
+    for(const node of nodes){const span=document.createElement('span');span.className='hp-focus-text';node.replaceWith(span);span.append(node);}
+}
+function clearSpeakerHover(mes){const timer=portraitTimers.get(mes);if(timer)clearTimeout(timer);portraitTimers.delete(mes);portraitHolds.delete(mes);dialogueHover.delete(mes);clearFocus(mes);const name=mes.querySelector('.hp-side-speaker');if(name)name.hidden=true;}
+function clearAllSpeakerHovers(){document.querySelectorAll('#chat > .mes').forEach(clearSpeakerHover);for(const timer of portraitTimers.values())clearTimeout(timer);portraitTimers.clear();}
+function enterSpeaker(node){const mes=node.closest('.mes'),s=settings();if(!mes||!s.masterEnabled)return;const timer=portraitTimers.get(mes);if(timer)clearTimeout(timer);portraitTimers.delete(mes);portraitHolds.delete(mes);dialogueHover.set(mes,node);focusSpeaker(mes,node.dataset.hpSpeaker);schedule();}
+function leaveSpeaker(node,event){
+    const mes=node.closest('.mes');if(!mes||dialogueHover.get(mes)!==node)return;
+    const next=event.relatedTarget?.closest?.('.hp-dialogue,.hp-monologue');if(next?.closest('.mes')===mes){enterSpeaker(next);return;}
+    const s=settings(),src=s.dialoguePortraitHover&&s.enabled?resolvePortrait(node.dataset.hpSpeaker,s):'';dialogueHover.delete(mes);clearFocus(mes);const caption=mes.querySelector('.hp-side-speaker');if(caption)caption.hidden=true;
+    if(src&&safeNumber('portraitLinger',s.portraitLinger)>0){portraitHolds.set(mes,{src});const timer=setTimeout(()=>{portraitTimers.delete(mes);portraitHolds.delete(mes);schedule();},safeNumber('portraitLinger',s.portraitLinger));portraitTimers.set(mes,timer);}else portraitHolds.delete(mes);schedule();
+}
+function bindSpeakerHover(node){if(node.hpSpeakerBound)return;node.hpSpeakerBound=true;node.addEventListener('mouseenter',()=>enterSpeaker(node));node.addEventListener('mouseleave',event=>leaveSpeaker(node,event));}
+function openSpeaker(speaker){const src=resolvePortrait(speaker,settings());if(src)openPortraitViewer(src,speaker);else openOverrideDialog(speaker);}
+function resolveDialogueColour(speaker,hex,s){
+    const values={override:findOverride(speaker,s)?.colour,model:hex};
+    for(const source of dialoguePriority(s)){if(source==='photo'){const src=resolvePortrait(speaker,s);values.photo=src?requestPhotoColour(src):null;}if(/^#[0-9a-f]{6}$/i.test(values[source]||''))return {colour:values[source],source};}return {colour:null,source:'default'};
+}
 function dialoguePriority(s){const allowed=['override','photo','model'];return [...new Set([...(Array.isArray(s.dialoguePriority)?s.dialoguePriority:[]).filter(x=>allowed.includes(x)),...allowed])];}
 function dialogueBlocks(source){
     return source.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)/g).flatMap((part,index)=>{
@@ -192,15 +224,14 @@ function refreshDialogue(s){
         const holder=mes.querySelector('.mes_text'),id=Number(mes.getAttribute('mesid')),message=context().chat?.[id];if(!holder||!message)return;
         const source=message.mes;if(typeof source!=='string'||s.afterGeneration&&messageIsGenerating(mes))return;
         decorateDialogue(holder,source,s);
-        if(!s.dialogueColours)dialogueHover.delete(mes);
+        if(!s.dialogueColours&&dialogueHover.get(mes)?.classList.contains('hp-dialogue'))clearSpeakerHover(mes);
         holder.querySelectorAll('.hp-dialogue').forEach(span=>{
             if(span.closest('code,pre'))return;
-            const values={override:findOverride(span.dataset.hpSpeaker,s)?.colour,model:span.dataset.hpExplicitColour};
-            for(const key of dialoguePriority(s)){if(key==='photo'){const src=resolvePortrait(span.dataset.hpSpeaker,s);values.photo=src?requestPhotoColour(src):null;}if(/^#[0-9a-f]{6}$/i.test(values[key]||'')){span.style.setProperty('--hp-dialogue-colour',values[key]);break;}}
-            if(!s.dialogueColours)span.style.removeProperty('--hp-dialogue-colour');
-            if(!span.hpHoverBound){span.hpHoverBound=true;
-                span.addEventListener('mouseenter',()=>{const current=settings();if(current.masterEnabled&&current.dialogueColours&&current.dialoguePortraitHover&&current.enabled&&resolvePortrait(span.dataset.hpSpeaker,current)){dialogueHover.set(mes,span);schedule();}});
-                span.addEventListener('mouseleave',event=>{const next=event.relatedTarget?.closest?.('.hp-dialogue');if(next && next.closest('.mes')===mes && next.dataset.hpSpeaker===span.dataset.hpSpeaker){dialogueHover.set(mes,next);return;}if(dialogueHover.get(mes)===span){dialogueHover.delete(mes);schedule();}});
+            const effective=resolveDialogueColour(span.dataset.hpSpeaker,span.dataset.hpExplicitColour,s);if(effective.colour)span.style.setProperty('--hp-dialogue-colour',effective.colour);else span.style.removeProperty('--hp-dialogue-colour');
+            bindSpeakerHover(span);
+            if(!span.hpClickBound){span.hpClickBound=true;span.setAttribute('role','button');span.setAttribute('tabindex','0');span.setAttribute('aria-label',`Manage speaker ${span.dataset.hpSpeaker}`);
+                span.addEventListener('click',event=>{if(!settings().masterEnabled||event.target.closest?.('a,button,input,select,textarea')||window.getSelection?.()?.isCollapsed===false)return;event.stopPropagation();openSpeaker(span.dataset.hpSpeaker);});
+                span.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&settings().masterEnabled){event.preventDefault();event.stopPropagation();openSpeaker(span.dataset.hpSpeaker);}});
             }
         });
     });
@@ -263,7 +294,7 @@ function refreshMonologues(s) {
     });
     document.querySelectorAll('#chat .hp-monologue').forEach(card => {
         if(s.afterGeneration&&messageIsGenerating(card.closest('.mes')))return;
-        applyThoughtColour(card, s);
+        bindSpeakerHover(card);applyThoughtColour(card, s);
         applyAlignment(card,s);
         updateCollapse(card, s);
         updateThoughtPortrait(card, s);
@@ -342,7 +373,7 @@ function trimText(root, count, fromStart) {
 const ranges = {
     desktopWidth: [0,400,0], mobileWidth: [0,400,0], bubbleWidth: [200,1200,450],
     fontSize: [60,150,92], backgroundOpacity: [0,60,8], portraitWidth: [35,180,80],
-    hoverStrength: [0,20,1.5], cornerRadius: [0,30,7],
+    portraitLinger: [0,5000,500], hoverStrength: [0,20,1.5], cornerRadius: [0,30,7],
 };
 function applyAppearance(s) {
     const vars = { bubbleWidth: ['--hp-width','px'], fontSize: ['--hp-font','%'],
@@ -556,9 +587,10 @@ function openPortraitViewer(src,title='Portrait') {
     const imagePath=fullPortraitSource(src);if(!imagePath)return;
     dismissPortraitViewer?.();
     const view=createPopup(title,'hp-portrait-dialog');dismissPortraitViewer=view.close;
-    const toolbar=document.createElement('div');toolbar.className='hp-viewer-toolbar';
+    view.dialog.querySelector('.hp-popup-header b').remove();
+    const toolbar=document.createElement('div');toolbar.className='hp-viewer-toolbar';const left=document.createElement('div');left.className='hp-viewer-left';const speaker=document.createElement('b');speaker.textContent=title;const choices=document.createElement('div');choices.className='hp-viewer-choices';left.append(speaker,choices);toolbar.append(left);
     for(const [mode,label] of [['card','Character card'],['saved','Saved photos'],['upload','Upload photo']]) {
-        toolbar.append(action(label,()=>{view.close();openOverrideDialog(title,mode);}));
+        choices.append(action(label,()=>{view.close();openOverrideDialog(title,mode);}));
     }
     const help=document.createElement('p');help.textContent='Choose a button to replace this speaker’s portrait. Use the colour picker to save a style colour immediately.';
     const quick=document.createElement('label');quick.className='hp-quick-colour';quick.textContent='Style colour ';
@@ -566,6 +598,7 @@ function openPortraitViewer(src,title='Portrait') {
     colour.value=findOverride(title,settings())?.colour||'#91a8c5';
     const disable=action('Disable colour override',()=>{const existing=findOverride(title,settings());if(existing)storeOverride(title,{...existing,colour:''});disable.hidden=true;});disable.hidden=!findOverride(title,settings())?.colour;
     colour.addEventListener('change',()=>{const existing=findOverride(title,settings());storeOverride(title,{...(existing||{}),colour:colour.value});disable.hidden=false;});const pipette=action('⌖',()=>{sampling=!sampling;pipette.setAttribute('aria-pressed',String(sampling));img.classList.toggle('hp-sampling',sampling);help.textContent=sampling?'Click a point on the photo to save its colour. Click the pipette again to cancel.':'Choose a button to replace the portrait, or pick a style colour.';});pipette.title='Sample colour from this photo';pipette.setAttribute('aria-label','Sample colour from photo');pipette.setAttribute('aria-pressed','false');pipette.disabled=true;let sampling=false;
+    const pipetteIcon=document.createElement('img');pipetteIcon.src=assetUrl('pipette.svg');pipetteIcon.alt='';pipetteIcon.className='hp-pipette-icon';pipette.replaceChildren(pipetteIcon);
     quick.append(pipette,colour,disable);toolbar.append(quick);
     const img=document.createElement('img');img.src=imagePath;img.alt=title;
     const error=document.createElement('p');error.hidden=true;error.textContent='Could not load this portrait.';
@@ -666,14 +699,12 @@ function requestPhotoColour(src){
     };
     image.onerror=()=>{};image.src=url;return null;
 }
-function resolveColour(card,s){
-    const speaker=card.dataset.hpSpeaker;
-    const override=findOverride(speaker,s);
-    const values={override:override?.colour,model:card.dataset.hpExplicitColour,memory:s.rememberColours?colourMemory()?.[canonicalName(speaker,s)]:null};
+function resolveThoughtColour(speaker,hex,s){
+    const override=findOverride(speaker,s),values={override:override?.colour,model:hex,memory:s.rememberColours?colourMemory()?.[canonicalName(speaker,s)]:null};
     if(s.samplePortrait){const src=resolvePortrait(speaker,s);values.photo=src?requestPhotoColour(src):null;}
-    for(const source of priority(s)){const colour=values[source];if(colour && /^#[\da-f]{6}$/i.test(colour))return colour;}
-    return null;
+    for(const source of priority(s)){const colour=values[source];if(colour&&/^#[\da-f]{6}$/i.test(colour))return {colour,source};}return {colour:null,source:'default'};
 }
+function resolveColour(card,s){return resolveThoughtColour(card.dataset.hpSpeaker,card.dataset.hpExplicitColour,s).colour;}
 function mixColour(hex,white,amount){const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));return '#'+rgb.map(x=>Math.round(x+(white?255-x:-x)*amount).toString(16).padStart(2,'0')).join('');}
 function luminance(hex){const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;}
 function readableColour(hex,background){
@@ -733,8 +764,10 @@ function updateMissingPortrait(card,s){
     }
     card.classList.toggle('hp-has-placeholder',true);
     const name=card.dataset.hpSpeaker;
+    placeholder.classList.toggle('hp-silhouette-placeholder',s.missingPortrait==='silhouette');
+    if(s.missingPortrait==='silhouette'){if(!placeholder.querySelector('img')){const image=document.createElement('img');image.src=assetUrl('silhouette.png');image.alt='';placeholder.replaceChildren(image);}}
     const text=s.missingPortrait==='initials'?name.split(/\s+/).map(x=>Array.from(x)[0]).slice(0,2).join('').toUpperCase():s.missingPortrait==='silhouette'?'👤':'＋ Photo';
-    if(placeholder.textContent!==text)placeholder.textContent=text;
+    if(s.missingPortrait!=='silhouette'&&(placeholder.querySelector('img')||placeholder.textContent!==text))placeholder.textContent=text;
     placeholder.setAttribute('aria-label',`Set portrait for ${name}`);placeholder.title=`Set portrait for ${name}`;
 }
 function styleScope(button,scope){button.textContent=scope?'L':'G';button.dataset.scope=scope?'local':'global';button.title=scope?`L: Local to the selected character (${scope}). G: Global across characters.`:'G: Global across characters. L: Local to the selected character.';}
@@ -870,6 +903,31 @@ function refreshLivePreview(){
     applyThoughtColour(previewElement,s);applyAlignment(previewElement,s);updateThoughtPortrait(previewElement,s);
     previewElement.classList.remove('hp-collapsed');
 }
+let speakerManager=null;
+function detectedSpeakers(){
+    const s=settings(),speakers=new Map();
+    const remember=(name,hex,kind)=>{const key=canonicalName(name,s);let row=speakers.get(key);if(!row){row={name,variants:new Set()};speakers.set(key,row);}row.variants.add(name);if(kind==='dialogue'){row.dialogue=true;if(hex)row.dialogueHex=hex;}else{row.thought=true;if(hex)row.thoughtHex=hex;}};
+    for(const message of context().chat||[]){if(message.is_user||message.is_system)continue;for(const block of dialogueBlocks(String(message.mes||'')))remember(block.name,block.hex,'dialogue');for(const thought of rawThoughts(message.mes)){const match=/^\s*([^:\n]+?)\s*:/.exec(thought[1]);if(match){const [name,hex]=parseSpeaker(match[1]);if(name)remember(name,hex,'thought');}}}
+    return [...speakers.values()].map(row=>{const portrait=resolvePortrait(row.name,s),dialogue=resolveDialogueColour(row.name,row.dialogueHex,s),thought=resolveThoughtColour(row.name,row.thoughtHex||'',s);return {...row,variants:[...row.variants],portrait,dialogue,thoughtColour:thought.colour,thoughtSource:thought.source,alias:aliasMap(s).get(normalizedName(row.name))||''};}).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function refreshSpeakerManager(){
+    if(!speakerManager)return;if(!speakerManager.popup.dialog.isConnected){speakerManager=null;return;}
+    const rows=detectedSpeakers(),signature=JSON.stringify(rows);if(signature===speakerManager.signature)return;speakerManager.signature=signature;
+    const grid=speakerManager.grid;grid.replaceChildren();speakerManager.status.textContent=`${rows.length} speaker${rows.length===1?'':'s'} detected in this chat`;
+    if(!rows.length){grid.textContent='Speakers will appear here when the chat contains named thoughts or dialogue.';return;}
+    for(const row of rows){const card=document.createElement('div');card.className='hp-speaker-card';const portrait=document.createElement('img');portrait.src=row.portrait||assetUrl('silhouette.png');portrait.alt='';portrait.addEventListener('error',()=>{if(portrait.getAttribute('src')!==assetUrl('silhouette.png'))portrait.src=assetUrl('silhouette.png');else portrait.hidden=true;});
+        const name=document.createElement('b');name.textContent=row.name;const variants=document.createElement('small');variants.textContent=row.variants.length>1?'Names: '+row.variants.join(', '):'';
+        const colours=document.createElement('div');const source={override:'Override',photo:'Photo colour',model:'HEX in message',memory:'Remembered colour',default:'Default'};
+        if(row.dialogue){const label=document.createElement('span');label.textContent=`Dialogue: ${row.dialogue.colour||'Default'} (${source[row.dialogue.source]})`;label.style.color=row.dialogue.colour||'';colours.append(label);}
+        if(row.thought){const label=document.createElement('span');label.textContent=`Thought: ${row.thoughtColour||'Default'} (${source[row.thoughtSource]})`;label.style.color=row.thoughtColour||'';colours.append(label);}
+        const manage=action('Portrait & colour',()=>openSpeaker(row.name));const alias=document.createElement('input');alias.className='text_pole';alias.value=row.alias;alias.placeholder='Alias of (speaker name)';alias.setAttribute('aria-label',`Alias target for ${row.name}`);
+        const saveAlias=action('Save alias',()=>{const target=alias.value.trim();if(normalizedName(target)===normalizedName(row.name)){alias.setCustomValidity?.('Choose another speaker, or leave blank to remove the alias.');alias.reportValidity?.();return;}alias.setCustomValidity?.('');const lines=String(settings().aliases).split('\n').filter(line=>normalizedName(line.split('=')[0])!==normalizedName(row.name));if(target)lines.push(`${row.name} = ${target}`);settings().aliases=lines.filter(x=>x.trim()).join('\n');const field=document.querySelector('[data-rpp="aliases"]');if(field)field.value=settings().aliases;context().saveSettingsDebounced();notifyOverrides();schedule();});
+        card.append(portrait,name,variants,colours,manage,alias,saveAlias);grid.append(card);
+    }
+}
+function openSpeakerManager(){speakerManager?.popup.close();const popup=createPopup('HivePack Speaker Manager','hp-picker-dialog hp-speaker-manager');const status=document.createElement('p'),grid=document.createElement('div');grid.className='hp-speaker-grid';popup.content.append(status,grid);speakerManager={popup,status,grid,signature:null};refreshSpeakerManager();}
+function addSpeakerManagerButton(){const menu=document.getElementById('extensionsMenu');if(!menu||document.getElementById('hp-speaker-manager-button'))return;const button=action('',openSpeakerManager);button.id='hp-speaker-manager-button';button.className='list-group-item flex-container flexGap5';const icon=document.createElement('i');icon.className='fa-solid fa-users extensionsMenuExtensionButton';const label=document.createElement('span');label.textContent='HivePack Speaker Manager';button.append(icon,label);menu.append(button);}
+
 function addSettings(){
     const host=document.querySelector('#extensions_settings');if(!host||document.getElementById('hivepack-settings'))return;
     const panel=document.createElement('div');panel.id='hivepack-settings';panel.className='extension_container';
@@ -878,11 +936,11 @@ function addSettings(){
     const save=()=>{context().saveSettingsDebounced();schedule();};
     const master=document.createElement('label');master.className='checkbox_label hp-master-toggle';const masterInput=document.createElement('input');masterInput.type='checkbox';masterInput.dataset.rpp='masterEnabled';masterInput.checked=settings().masterEnabled;master.append(masterInput,document.createTextNode('Enable HivePack'));masterInput.addEventListener('change',()=>{settings().masterEnabled=masterInput.checked;save();});area.append(master);
     const checks=document.createElement('div');checks.className='hp-checkbox-grid';area.append(checks);
-    for(const [key,title] of Object.entries({afterGeneration:'Apply styling after generation finishes (prevents flashing)',monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',samplePortrait:'Sample portrait colour',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)',dialogueColours:'Colour character dialogue (<c>)',dialoguePortraitHover:'Show dialogue speaker portrait on hover (Ripple only)'})){
+    for(const [key,title] of Object.entries({speakerFocus:'Dim other text when hovering a speaker',afterGeneration:'Apply styling after generation finishes (prevents flashing)',monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',samplePortrait:'Sample portrait colour',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)',dialogueColours:'Colour character dialogue (<c>)',dialoguePortraitHover:'Show hovered speaker portrait (dialogue and thoughts, Ripple only)'})){
         const label=document.createElement('label');label.className='checkbox_label';const input=document.createElement('input');input.type='checkbox';input.dataset.rpp=key;input.checked=Boolean(settings()[key]);label.append(input,document.createTextNode(title));input.addEventListener('change',()=>{settings()[key]=input.checked;save();});checks.append(label);
     }
     const appearance=document.createElement('details');appearance.className='hp-appearance';const summary=document.createElement('summary');summary.textContent='Appearance';appearance.append(summary);area.append(appearance);
-    for(const [key,title] of Object.entries({bubbleWidth:'Maximum thought width (px)',fontSize:'Thought font size (%)',backgroundOpacity:'Background opacity (%)',portraitWidth:'Thought portrait width (px)',hoverStrength:'Hover enlargement (%)',cornerRadius:'Corner radius (px)',desktopWidth:'Full-message persona width (0 = Ripple default)',mobileWidth:'Mobile full-message persona width (0 = Ripple default)'})){
+    for(const [key,title] of Object.entries({portraitLinger:'Portrait linger after hover (ms)',bubbleWidth:'Maximum thought width (px)',fontSize:'Thought font size (%)',backgroundOpacity:'Background opacity (%)',portraitWidth:'Thought portrait width (px)',hoverStrength:'Hover enlargement (%)',cornerRadius:'Corner radius (px)',desktopWidth:'Full-message persona width (0 = Ripple default)',mobileWidth:'Mobile full-message persona width (0 = Ripple default)'})){
         const label=document.createElement('label');label.textContent=title;const input=document.createElement('input');input.type='number';input.className='text_pole';input.dataset.rpp=key;input.min=ranges[key][0];input.max=ranges[key][1];input.step=key==='hoverStrength'?'.1':'1';input.value=settings()[key];
         input.addEventListener('input',()=>{settings()[key]=safeNumber(key,input.value);save();});input.addEventListener('change',()=>{input.value=settings()[key];});label.append(input);appearance.append(label);
     }
@@ -917,7 +975,7 @@ function addSettings(){
     const previewTitle=document.createElement('b');previewTitle.textContent='Live styling preview';appearance.append(previewTitle);
     const preview=document.createElement('div');preview.className='hp-preview';preview.innerHTML='<span class="hp-monologue"><span class="hp-monologue-content"><span class="hp-monologue-name"></span><span class="hp-monologue-body">An ordinary thought, <strong>an important detail</strong>, and <span class="hp-quote">“a remembered voice.”</span></span><span class="hp-monologue-name hp-monologue-footer"></span></span></span>';
     previewElement=preview.querySelector('.hp-monologue');appearance.append(preview);
-    const aliasesLabel=document.createElement('label');aliasesLabel.textContent='Aliases: one Alias = Character Name per line';const aliases=document.createElement('textarea');aliases.className='text_pole';aliases.rows=4;aliases.value=settings().aliases;aliases.placeholder='Appy = Apothos';aliases.addEventListener('change',()=>{settings().aliases=aliases.value;save();});aliasesLabel.append(aliases);area.append(aliasesLabel);const aliasHelp=document.createElement('small');aliasHelp.textContent='HivePack treats an alias as the same speaker, sharing portrait overrides, colour overrides, and remembered colours.';area.append(aliasHelp);
+    const aliasesLabel=document.createElement('label');aliasesLabel.textContent='Aliases: one Alias = Character Name per line';const aliases=document.createElement('textarea');aliases.className='text_pole';aliases.dataset.rpp='aliases';aliases.rows=4;aliases.value=settings().aliases;aliases.placeholder='Appy = Apothos';aliases.addEventListener('change',()=>{settings().aliases=aliases.value;save();});aliasesLabel.append(aliases);area.append(aliasesLabel);const aliasHelp=document.createElement('small');aliasHelp.textContent='HivePack treats an alias as the same speaker, sharing portrait overrides, colour overrides, and remembered colours.';area.append(aliasHelp);
     const heading=document.createElement('b');heading.textContent='Speaker portrait and colour overrides';area.append(heading);
     const editor=buildOverrideEditor();area.append(editor);
     const saved=document.createElement('details');saved.className='hp-saved-overrides';const savedTitle=document.createElement('summary');savedTitle.textContent='Existing speaker overrides';saved.append(savedTitle);const rows=document.createElement('div');rows.className='hp-override-list';saved.append(rows);area.append(saved);
@@ -941,7 +999,7 @@ function addSettings(){
 }
 
 function init() {
-    addSettings();
+    addSettings();addSpeakerManagerButton();
     const c = context();
     const events = c.eventTypes ?? c.event_types;
     if(events.GENERATION_STARTED)c.eventSource.on(events.GENERATION_STARTED,(type,options,dryRun)=>{
@@ -964,7 +1022,7 @@ function init() {
     for (const name of ['CHAT_CHANGED', 'CHARACTER_MESSAGE_RENDERED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'PERSONA_CHANGED', 'PERSONA_UPDATED', 'GENERATION_ENDED', 'GENERATION_STOPPED', 'STREAM_TOKEN_RECEIVED', 'CHARACTER_EDITED']) {
         if (events[name]) c.eventSource.on(events[name], () => {
             if(name==='GENERATION_STOPPED'){activeGeneration=null;if(context().streamingProcessor)endedProcessors.add(context().streamingProcessor);}
-            if (name === 'CHAT_CHANGED') { collapsedThoughts.clear();knownThoughts.clear();autoCollapseBefore=-1;generationSnapshot=null;activeGeneration=null;savedColourSignature=''; }
+            if (name === 'CHAT_CHANGED') { clearAllSpeakerHovers(); collapsedThoughts.clear();knownThoughts.clear();autoCollapseBefore=-1;generationSnapshot=null;activeGeneration=null;savedColourSignature=''; }
             if (name==='CHARACTER_EDITED') photoColours.clear();
             if (['CHAT_CHANGED','CHARACTER_EDITED'].includes(name)) notifyOverrides();
             if (name.startsWith('PERSONA_')) lastAvatar = undefined;

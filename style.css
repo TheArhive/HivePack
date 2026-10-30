@@ -329,3 +329,24 @@ input[type="color"]::-webkit-color-swatch { border:0;border-radius:1px; }
 .hp-prompt-editor { margin-top:12px; }
 .hp-prompt-editor textarea { margin-top:8px;resize:vertical; }
 .hp-prompt-editor .menu_button { width:fit-content; }
+
+/* Speaker interactions and bundled artwork. */
+.hp-side-speaker { display:block;text-align:center;font-size:.85em;line-height:1.3;margin-top:4px;overflow-wrap:anywhere; }
+.hp-side-speaker[hidden] { display:none!important; }
+.hp-viewer-left { display:flex;flex-direction:column;align-items:flex-start;gap:7px; }
+.hp-viewer-choices { display:flex;flex-wrap:wrap;gap:6px; }
+.hp-viewer-toolbar { align-items:flex-start; }
+.hp-pipette-icon { display:block;width:20px;height:20px;object-fit:contain; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue.hp-has-placeholder:has(> .hp-silhouette-placeholder) { grid-template-columns:minmax(0,1fr) min(var(--hp-portrait-width,80px),25vw); }
+:is(#chat .mes_text,.hp-preview) .hp-silhouette-placeholder { width:auto;position:relative;padding:0;writing-mode:horizontal-tb;overflow:hidden;min-height:60px; }
+.hp-silhouette-placeholder img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;margin:0;border:0; }
+#chat .hp-speaker-focus .hp-focus-text,
+#chat .hp-speaker-focus .hp-dialogue:not(.hp-speaker-active),
+#chat .hp-speaker-focus .hp-monologue:not(.hp-speaker-active) > .hp-monologue-content { opacity:.3; }
+#chat .hp-dialogue { cursor:pointer; }
+#chat .hp-dialogue:focus-visible { outline:1px solid currentColor;outline-offset:2px; }
+.hp-speaker-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px; }
+.hp-speaker-card { display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:12px;border:1px solid #71869e;border-radius:7px;min-width:0; }
+.hp-speaker-card > img { width:64px;height:88px;object-fit:cover;border-radius:5px; }
+.hp-speaker-card > div > span { display:block;font-size:.85em;overflow-wrap:anywhere; }
+.hp-speaker-card .menu_button { width:fit-content;margin:0; }

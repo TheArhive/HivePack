@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.10.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.11.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -76,6 +76,7 @@ The centred **Enable HivePack** switch sits above the other settings. Turning it
 | --- | --- |
 | Apply styling after generation finishes (prevents flashing) | Defers thought cards, dialogue styling, and the side portrait for the generating message until generation ends or is stopped. Older messages stay styled. Off by default. |
 | Style inner monologues | Turns recognised thoughts into styled cards. |
+| Dim other text when hovering a speaker | Keeps the hovered speaker’s dialogue and thoughts clear while dimming narration and other speakers in that message. On by default. |
 | Hover highlight and enlargement | Highlights and enlarges thought cards on hover. |
 | Show thought portraits | Shows a portrait or a clickable fallback beside thoughts. |
 | Sample portrait colour | Makes portrait colours available for thought styling. |
@@ -85,9 +86,9 @@ The centred **Enable HivePack** switch sits above the other settings. Turning it
 | Collapse earlier messages after a new AI response | Collapses older thoughts after a new response finishes. |
 | Show persona beside full messages (Ripple only) | Adds your persona portrait to the right of AI messages. |
 | Colour character dialogue (<c>) | Enables dialogue colouring. On by default. |
-| Show dialogue speaker portrait on hover (Ripple only) | Temporarily replaces the right-side persona portrait with the dialogue speaker. Off by default. |
+| Show hovered speaker portrait (dialogue and thoughts, Ripple only) | Temporarily replaces the right-side persona portrait when hovering dialogue or a thought bubble. Off by default. |
 
-The dialogue hover option is greyed out unless **Show persona beside full messages** is enabled. It requires Ripple style. Moving away restores the persona portrait; missing or failed speaker images leave or restore the persona.
+The dialogue hover option is greyed out unless **Show persona beside full messages** is enabled. It requires Ripple style. The hovered speaker’s name appears below the right-side portrait, using the effective dialogue or thought colour. No name appears while idle. Leaving hides the name immediately; the image lingers for the configured delay before restoring the persona. Moving onto another speaker cancels the previous linger. A missing or failed portrait leaves or restores the persona without a misleading name label.
 
 ## Colours and appearance
 
@@ -123,10 +124,11 @@ Sampling uses a 32×32 rendering, ignores transparent pixels, and caches results
 | Background opacity | 0–60% |
 | Thought portrait width | 35–180 px, constrained on narrow screens |
 | Hover enlargement | 0–20% |
+| Portrait linger after hover | 0–5000 ms; default 500 ms. Set 0 for immediate restoration. |
 | Corner radius | 0–30 px |
 | Thought alignment | Left, centered, right, or full message width |
 | Portrait crop | Match bubble height, original proportions, 1:1, 2:3, or 3:2 |
-| Missing portrait appearance | Vertical photo-picker strip, speaker initials, or silhouette |
+| Missing portrait appearance | Vertical photo-picker strip, speaker initials, or the supplied silhouette image |
 | Full-message persona width, desktop/mobile | 0 uses Ripple defaults; 40–400 px sets a custom width |
 
 Right-aligned thoughts enlarge toward the top left. Full-width thoughts occupy 82% of the message text area and enlarge from the centre, leaving space for the maximum hover enlargement. Reduced-motion preferences disable scaling and animation. Hover enlargement can overlap nearby text without moving the layout.
@@ -154,6 +156,14 @@ Professor Bine = Ilya
 
 HivePack treats an alias as the same speaker, sharing portrait overrides, colour overrides, and remembered colours. Labels retain the name written by the model. Aliases are global; chains are supported and cycles are ignored.
 
+### Speaker manager and dialogue controls
+
+Open the **magic wand menu → HivePack Speaker Manager** to see speakers detected in the current chat’s completed dialogue and thought blocks. Aliases are grouped together. Each card shows the associated portrait, effective dialogue/thought colours and their sources, a **Portrait & colour** button, and an alias-target field. Leave the alias target blank and click **Save alias** to remove that speaker’s alias mapping. Changes share the same settings as the main HivePack panel.
+
+Click dialogue to open the same speaker controls used by thought portraits: a portrait viewer if the speaker has a photo, or the compact override editor if they do not. Dialogue is keyboard-focusable; Enter or Space opens its controls. Selecting text does not open an editor.
+
+When **Dim other text when hovering a speaker** is enabled, hovering dialogue or a thought highlights that speaker throughout the message, including their aliases. Other speakers and narrative text are dimmed. Moving away clears the focus immediately, independently of the portrait linger delay.
+
 ### Create or edit an override
 
 Under **Speaker portrait and colour overrides**:
@@ -180,7 +190,7 @@ Open **Existing speaker overrides** to browse compact cards with portrait thumbn
 
 Click a thought portrait to open a larger view, scaled down to fit the browser without enlarging small images. Use Close, Escape, or the backdrop to dismiss it. Portraits and missing-portrait controls also support Enter/Space.
 
-The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
+The speaker’s name sits at the top left, above the portrait-selection buttons. The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The supplied SVG **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
 
 Click the fallback beside a thought without an image to open the compact override editor. Its selection and colour controls are centred, with a green-check save button at the bottom.
 
@@ -220,4 +230,4 @@ DOM regression tests cover formatting, colour sources, collapse controls, stream
 
 Remove HivePack through the extension manager and refresh. Settings, chat colour metadata, and uploaded photos may remain; delete unwanted photos through the photo browser before uninstalling.
 
-MIT. No Moonlit Echoes or Megumin Suite source is bundled.
+Code: MIT. No Moonlit Echoes or Megumin Suite source is bundled. The pipette SVG (SVG Repo) and silhouette PNG were supplied for HivePack and are bundled locally in `assets/`.
