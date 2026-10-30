@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.14.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.15.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -20,13 +20,14 @@ The right-side persona portrait requires [Moonlit Echoes Theme](https://github.c
 
 The dark gray and purple panel opens from the **hive button** or **magic wand menu → HivePack Settings**. HivePack no longer adds settings to SillyTavern’s Extensions drawer. Preferences save automatically; portrait-override drafts are applied when **Add / replace override** is clicked.
 
-The rounded square hive button has a light purple gradient and starts beside the text input, shifted 200 pixels left from its composer anchor and kept within the window. Saved custom positions are retained; use Reset floating button position to apply the new default. Dragging follows the pointer directly without animated position changes. Hovering adds a subtle enlargement and highlight, without slowing dragging. Drag it to a floating position; its location is remembered and kept inside the window when resized. Keyboard users can move the focused button with **Alt + arrow keys**. **General → Reset floating button position** docks it beside the input again.
+The rounded square hive button has a light purple gradient and starts beside the text input, 200 pixels left of its composer anchor. It is positioned in viewport coordinates, outside the composer’s clipping containers, and clamped horizontally and vertically to stay on screen. Saved custom positions are retained; use Reset floating button position to apply the new default. Dragging follows the pointer directly without animated position changes. Hovering adds a subtle enlargement and highlight, without slowing dragging. Drag it to a floating position; its location is remembered and kept inside the window when resized. Keyboard users can move the focused button with **Alt + arrow keys**. **General → Reset floating button position** restores the viewport-anchored default beside the input again.
 
 | Tab | Contents |
 | --- | --- |
 | General | Large green/gray power switch, compact toggle columns, generation timing, collapse behaviour, and launcher reset. |
 | Appearance | Compact layout columns, portraits, sampling methods, and animated colour-priority lists. |
-| Speakers | Embedded speaker manager; expand Add speaker overrides & aliases for manual configuration. |
+| Current Speakers | Speakers detected in the open chat, with up to 25 cards per page. |
+| All Speakers | Remembered speakers, overrides, and aliases, with up to 25 cards per page; expand Add speaker overrides & aliases for manual configuration. |
 | Photos | Embedded gallery with preview, pagination, upload, refresh, reuse, and deletion. |
 | Prompt | Optional prompt injection, placement/depth, editable instructions, and reset. |
 
@@ -86,7 +87,7 @@ HivePack colours matching dialogue already rendered by SillyTavern, retaining it
 
 ## Main settings
 
-The large **HivePack power switch** sits above the other General settings. It uses bright green text when on and light gray text when off, against dark button backgrounds. Turning it off removes HivePack’s thought cards, dialogue colours and hidden headers, side portraits, and collapse controls. It also pauses colour learning and removes HivePack’s runtime prompt injection. Your preferences and overrides are retained.
+The large **HivePack power switch** sits above the other General settings. It uses bright green text when on and light gray text when off, against dark button backgrounds. Its label updates immediately to **HivePack On** or **HivePack Off**. Turning it off removes HivePack’s thought cards, dialogue colours and hidden headers, side portraits, and collapse controls. It also pauses colour learning and removes HivePack’s runtime prompt injection. Your preferences and overrides are retained.
 
 | Setting | What it does |
 | --- | --- |
@@ -147,7 +148,7 @@ Bounded numeric Appearance controls are sliders with live numeric readouts. Keyb
 | Corner radius | 0–30 px |
 | Thought alignment | Left, centered, right, or full message width |
 | Portrait crop | Match bubble height, original proportions, 1:1, 2:3, or 3:2 |
-| Missing portrait appearance | Vertical photo-picker strip, speaker initials, or the supplied silhouette image |
+| Missing portrait appearance | None (plain bubble), vertical photo-picker strip, speaker initials, or the supplied silhouette image |
 | Full-message persona width, desktop/mobile | 0 uses Ripple defaults; 40–400 px sets a custom width |
 
 Portrait crops keep the image at the top right of the thought, including fixed aspect ratios and original proportions. Right-aligned thoughts enlarge toward the top left. Full-width thoughts occupy 82% of the message text area and enlarge from the centre, leaving space for the maximum hover enlargement. Reduced-motion preferences disable scaling and animation. Hover enlargement can overlap nearby text without moving the layout.
@@ -177,7 +178,7 @@ HivePack treats an alias as the same speaker, sharing portrait overrides, colour
 
 ### Speaker manager and dialogue controls
 
-Open the **Speakers** tab to see speakers detected in the current chat’s completed dialogue and thought blocks. Aliases are grouped together. Each card shows the associated portrait, effective dialogue/thought colours and their sources, a **Portrait & colour** button, and an alias-target field. Leave the alias target blank and click **Save alias** to remove that speaker’s alias mapping. Changes share the same settings as the main HivePack panel.
+Open **Current Speakers** to see speakers detected in the current chat’s completed dialogue and thought blocks. Open **All Speakers** for speakers remembered from chats you have opened, plus names in configured overrides and aliases. Both views have Previous/Next controls and display at most 25 cards per page. HivePack does not scan unopened chat files; its persistent speaker history grows as you use it. Portraits, effective colours, and edits use the currently selected character’s override scope. Aliases are grouped together. Each card shows the associated portrait, effective dialogue/thought colours and their sources, a **Portrait & colour** button, and an alias-target field. Leave the alias target blank and click **Save alias** to remove that speaker’s alias mapping. Changes share the same settings as the main HivePack panel.
 
 Click dialogue to open the same speaker controls used by thought portraits: a portrait viewer if the speaker has a photo, or the compact override editor if they do not. Dialogue is keyboard-focusable; Enter or Space opens its controls. Selecting text does not open an editor.
 
@@ -185,7 +186,7 @@ When **Dim other text when hovering a speaker** is enabled, hovering dialogue or
 
 ### Create or edit an override
 
-In **Speakers → Add speaker overrides & aliases → Speaker portrait and colour overrides**:
+In **All Speakers → Add speaker overrides & aliases → Speaker portrait and colour overrides**:
 
 1. Enter the speaker name or alias.
 2. Select a character card, the current persona, a saved photo, or a custom upload. Leave **Automatic** selected for a colour-only override.
@@ -211,7 +212,7 @@ Click a thought portrait to open a larger view, scaled down to fit the browser w
 
 The speaker’s name sits at the top left, above the portrait-selection buttons. **Close** is centred below the image. All HivePack popup menus share the panel’s dark purple theme, Close buttons have red outlines, and Add / replace override has a light purple background. Thought portraits use a clicking-hand cursor. The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The supplied SVG **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
 
-Click the fallback beside a thought without an image to open the compact override editor. Its selection and colour controls are centred, with a green-check save button at the bottom.
+Click the fallback beside a thought without an image to open the compact override editor. With **Missing portrait appearance → None (plain bubble)**, no placeholder or extra portrait column is appended; use the speaker tabs to assign a portrait instead. Its selection and colour controls are centred, with a green-check save button at the bottom.
 
 ### Upload and reuse photos
 
