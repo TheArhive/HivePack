@@ -1,7 +1,7 @@
 import { user_avatar } from '../../../../script.js';
 
 const KEY = 'hivepack';
-const defaults = { enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker' };
+const defaults = { enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble' };
 let queued = false;
 let revision = 0;
 let lastAvatar;
@@ -147,7 +147,7 @@ function updateThoughtPortrait(card, s) {
         if (card.classList.contains('hp-has-portrait')) card.classList.remove('hp-has-portrait');
         return;
     }
-    card.querySelector(':scope > .hp-thought-placeholder')?.remove();
+    card.querySelector(':scope > .hp-thought-placeholder')?.remove();card.classList.remove('hp-has-placeholder');
     if (!portrait) {
         portrait = document.createElement('span');
         portrait.className = 'hp-thought-portrait';
@@ -418,10 +418,15 @@ function openPortraitViewer(src,title='Portrait') {
     for(const [mode,label] of [['card','Character card'],['saved','Saved photos'],['upload','Upload photo']]) {
         toolbar.append(action(label,()=>{view.close();openOverrideDialog(title,mode);}));
     }
+    const help=document.createElement('p');help.textContent='Choose a button to replace this speaker’s portrait. Use the colour picker to save a style colour immediately.';
+    const quick=document.createElement('label');quick.className='hp-quick-colour';quick.textContent='Style colour ';
+    const colour=document.createElement('input');colour.type='color';colour.setAttribute('aria-label','Set speaker style colour immediately');
+    colour.value=findOverride(title,settings())?.colour||'#91a8c5';
+    colour.addEventListener('change',()=>{const existing=findOverride(title,settings());storeOverride(title,{...(existing||{}),colour:colour.value});});quick.append(colour);toolbar.append(quick);
     const img=document.createElement('img');img.src=imagePath;img.alt=title;
     const error=document.createElement('p');error.hidden=true;error.textContent='Could not load this portrait.';
     img.addEventListener('error',()=>{img.hidden=true;error.hidden=false;});
-    view.content.append(toolbar,img,error);
+    view.content.append(toolbar,help,img,error);
 }
 async function listPortraitPhotos() {
     const response=await fetch('/api/images/list',{method:'POST',headers:context().getRequestHeaders(),body:JSON.stringify({folder:'HivePack',sortField:'date',sortOrder:'desc'})});
@@ -549,19 +554,21 @@ function markQuotes(body){
         }node.replaceWith(result);
     }
 }
-function applyAlignment(card,s){for(const value of ['left','center','right','stretch'])card.classList.toggle('hp-align-'+value,s.alignment===value);}
+function applyAlignment(card,s){card.dataset.hpCrop=s.portraitCrop;for(const value of ['left','center','right','stretch'])card.classList.toggle('hp-align-'+value,s.alignment===value);}
 function updateMissingPortrait(card,s){
     let placeholder=card.querySelector(':scope > .hp-thought-placeholder');
-    if(!s.thoughtPortraits){placeholder?.remove();return;}
+    if(!s.thoughtPortraits){placeholder?.remove();card.classList.remove('hp-has-placeholder');return;}
     if(!placeholder){placeholder=document.createElement('span');placeholder.className='hp-thought-placeholder';placeholder.setAttribute('role','button');placeholder.setAttribute('tabindex','0');
         const open=()=>openOverrideDialog(card.dataset.hpSpeaker);
         placeholder.addEventListener('click',open);placeholder.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});card.append(placeholder);
     }
+    card.classList.toggle('hp-has-placeholder',true);
     const name=card.dataset.hpSpeaker;
     const text=s.missingPortrait==='initials'?name.split(/\s+/).map(x=>Array.from(x)[0]).slice(0,2).join('').toUpperCase():s.missingPortrait==='silhouette'?'👤':'＋ Photo';
     if(placeholder.textContent!==text)placeholder.textContent=text;
     placeholder.setAttribute('aria-label',`Set portrait for ${name}`);placeholder.title=`Set portrait for ${name}`;
 }
+function styleScope(button,scope){button.textContent=scope?'L':'G';button.dataset.scope=scope?'local':'global';button.title=scope?`L: Local to the selected character (${scope}). G: Global across characters.`:'G: Global across characters. L: Local to the selected character.';}
 function action(label,callback){const button=document.createElement('button');button.type='button';button.className='menu_button';button.textContent=label;button.addEventListener('click',callback);return button;}
 function createPopup(title,className='hp-picker-dialog'){
     const origin=document.activeElement,dialog=document.createElement('dialog');dialog.className=className;dialog.setAttribute('aria-label',title);
@@ -580,7 +587,7 @@ async function openSavedPhotoPicker(onSelect){
     const popup=createPopup('Saved HivePack photos');let photos=[],page=0;const size=25;
     popup.content.textContent='Loading saved photos…';
     const render=()=>{
-        if(!popup.dialog.isConnected)return;popup.content.replaceChildren();
+        if(!popup.dialog.isConnected)return;popup.content.replaceChildren();popup.dialog.querySelector('.hp-photo-back')?.remove();
         if(!photos.length){popup.content.textContent='No saved photos yet.';return;}
         page=Math.min(page,Math.max(0,Math.ceil(photos.length/size)-1));
         const grid=document.createElement('div');grid.className='hp-photo-gallery';
@@ -588,7 +595,10 @@ async function openSavedPhotoPicker(onSelect){
             const tile=document.createElement('div');tile.className='hp-photo-tile';const thumb=document.createElement('img');thumb.src=image;thumb.alt='Saved portrait';thumb.loading='lazy';
             const view=action('Preview',()=>{
                 popup.content.replaceChildren();const large=document.createElement('img');large.src=image;large.alt='Selected portrait';large.className='hp-selected-photo';
-                popup.content.append(action('Back',render),large,action('Select photo',()=>{onSelect(image);popup.close();}));
+                const back=action('Back',render);back.classList.add('hp-photo-back');popup.dialog.querySelector('.hp-popup-header').prepend(back);
+                const choose=action('Select photo',()=>{onSelect(image);popup.close();});choose.classList.add('hp-select-photo');
+                const check=document.createElement('span');check.textContent='✓ ';check.style.color='#74d78a';choose.prepend(check);
+                popup.content.append(choose,large);
             });view.classList.add('hp-photo-view');view.replaceChildren(thumb);view.setAttribute('aria-label','Preview saved portrait');
             const remove=action('Delete photo',async()=>{
                 const uses=settings().overrides.filter(item=>item.image&&safeImagePath(item.image)===safeImagePath(image));
@@ -617,7 +627,7 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
     const preview=document.createElement('img');preview.className='hp-editor-preview';preview.alt='Selected override portrait';preview.hidden=true;
     const status=document.createElement('small');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
     let draft={scope:''},previewUrl='',pinnedOverride=initialOverride;
-    function updateScope(){scope.textContent=draft.scope?'Current character':'Global';scope.disabled=!draft.scope&&!selectedCharacterKey();scope.title=draft.scope?`Character: ${draft.scope}`:'Applies to all characters';}
+    function updateScope(){styleScope(scope,draft.scope);scope.disabled=!draft.scope&&!selectedCharacterKey();}
     function fillOptions(){
         const selected=select.value;select.replaceChildren();
         for(const [value,label] of [['@auto','Automatic portrait (or colour only)'],...(draft.image?[['@custom','Selected custom / saved photo']]:[]),['@persona','Current persona'],['@none','No portrait'],...(context().characters??[]).filter(Boolean).map(card=>[card.avatar,`${card.name || card.data?.name || 'Character'} (${card.avatar})`])]){
@@ -638,7 +648,7 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
         delete draft.image;draft.avatar=select.value==='@auto'?undefined:select.value;status.textContent='Portrait selected. Click Add / replace override to save.';
         showPreview(draft.avatar==='@persona'?avatarUrl:draft.avatar&&draft.avatar!=='@none'?context().getThumbnailUrl('avatar',draft.avatar):'');
     });
-    name.addEventListener('change',load);
+    name.addEventListener('change',()=>{if(findOverride(name.value,settings()))load();});
     enabled.addEventListener('change',()=>{colour.disabled=!enabled.checked;});
     const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp,image/gif';file.className='hp-file-input';file.setAttribute('aria-label','Custom portrait image');
     const picker=action('＋ Choose custom photo',()=>file.click());picker.classList.add('hp-photo-picker');
@@ -657,12 +667,15 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
         catch(error){status.textContent=error.message;}
     });
     const actions=document.createElement('div');actions.className='hp-editor-actions';actions.append(picker,browse);
-    root.append(instruction,name,colourLabel,select,file,actions,preview,add,status);
+    const cardLabel=document.createElement('label');cardLabel.textContent='Portrait source: choose a character card, your persona, or Automatic';cardLabel.append(select);
+    const cardPreview=document.createElement('img');cardPreview.className='hp-card-preview';cardPreview.alt='Selected character card';cardPreview.hidden=true;cardLabel.prepend(cardPreview);
+    const syncCardPreview=()=>{const card=context().characters?.find(x=>x?.avatar===select.value);cardPreview.hidden=!card;if(card)cardPreview.src=context().getThumbnailUrl('avatar',card.avatar);};select.addEventListener('change',syncCardPreview);
+    root.append(instruction,name,colourLabel,cardLabel,file,actions,preview,add,status);
     if(mode==='upload')select.hidden=true;
     const cleanup=()=>{if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl='';}window.removeEventListener('beforeunload',cleanup);};
     root.hpCleanup=cleanup;window.addEventListener('beforeunload',cleanup,{once:true});
     root.hpRefresh=()=>{updateScope();fillOptions();};
-    load();return root;
+    load();syncCardPreview();return root;
 }
 function openOverrideDialog(speaker,mode='all',initialOverride=null){
     const popup=createPopup(`Portrait and colour: ${speaker}`,'hp-picker-dialog hp-override-dialog');
@@ -670,7 +683,7 @@ function openOverrideDialog(speaker,mode='all',initialOverride=null){
     popup.dialog.addEventListener('close',()=>editor.hpCleanup?.(),{once:true});
     const choices=document.createElement('div');choices.className='hp-editor-actions';
     choices.append(action('Character card',()=>{const select=editor.querySelector('select');select.hidden=false;select.focus();}),action('Saved photos',()=>Array.from(editor.querySelectorAll('button')).find(x=>x.textContent==='Browse saved photos').click()),action('Upload photo',()=>editor.querySelector('input[type="file"]').click()));
-    popup.content.prepend(choices);
+    popup.content.prepend(choices);editor.querySelector('.hp-editor-actions').hidden=true;
     if(mode==='saved')Array.from(editor.querySelectorAll('button')).find(x=>x.textContent==='Browse saved photos').click();
     if(mode==='upload')editor.querySelector('input[type="file"]').click();
     if(mode==='card')editor.querySelector('select').focus();
@@ -690,8 +703,9 @@ function addSettings(){
     panel.innerHTML='<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>HivePack</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content hp-settings-content"></div></div>';
     const area=panel.querySelector('.hp-settings-content');
     const save=()=>{context().saveSettingsDebounced();schedule();};
+    const checks=document.createElement('div');checks.className='hp-checkbox-grid';area.append(checks);
     for(const [key,title] of Object.entries({monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',samplePortrait:'Sample average portrait colour',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)'})){
-        const label=document.createElement('label');label.className='checkbox_label';const input=document.createElement('input');input.type='checkbox';input.dataset.rpp=key;input.checked=Boolean(settings()[key]);label.append(input,document.createTextNode(title));input.addEventListener('change',()=>{settings()[key]=input.checked;save();});area.append(label);
+        const label=document.createElement('label');label.className='checkbox_label';const input=document.createElement('input');input.type='checkbox';input.dataset.rpp=key;input.checked=Boolean(settings()[key]);label.append(input,document.createTextNode(title));input.addEventListener('change',()=>{settings()[key]=input.checked;save();});checks.append(label);
     }
     const appearance=document.createElement('details');appearance.className='hp-appearance';const summary=document.createElement('summary');summary.textContent='Appearance';appearance.append(summary);area.append(appearance);
     for(const [key,title] of Object.entries({bubbleWidth:'Maximum thought width (px)',fontSize:'Thought font size (%)',backgroundOpacity:'Background opacity (%)',portraitWidth:'Thought portrait width (px)',hoverStrength:'Hover enlargement (%)',cornerRadius:'Corner radius (px)',desktopWidth:'Full-message persona width (0 = Ripple default)',mobileWidth:'Mobile full-message persona width (0 = Ripple default)'})){
@@ -702,12 +716,19 @@ function addSettings(){
         for(const [value,text] of options){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}select.value=settings()[key];select.addEventListener('change',()=>{settings()[key]=select.value;save();});label.append(select);appearance.append(label);
     }
     selection('alignment','Thought alignment',[['left','Left'],['center','Centered'],['right','Right'],['stretch','Full message width']]);
+    selection('portraitCrop','Portrait crop',[['bubble','Match bubble height'],['original','Original image proportions'],['square','1:1'],['portrait','2:3'],['landscape','3:2']]);
     selection('missingPortrait','Missing portrait appearance',[['picker','Compact photo picker'],['initials','Speaker initials'],['silhouette','Silhouette']]);
     const priorityHeading=document.createElement('b');priorityHeading.textContent='Colour priority (first available wins)';appearance.append(priorityHeading);
     const priorities=document.createElement('div');appearance.append(priorities);
-    function renderPriority(){priorities.replaceChildren();priority(settings()).forEach((source,index)=>{const row=document.createElement('label');row.textContent=`${index+1}. `;const select=document.createElement('select');select.className='text_pole';select.setAttribute('aria-label',`Colour priority ${index+1}`);
-        for(const value of sources){const option=document.createElement('option');option.value=value;option.textContent=sourceLabels[value];select.append(option);}select.value=source;
-        select.addEventListener('change',()=>{const order=priority(settings()),other=order.indexOf(select.value);[order[index],order[other]]=[order[other],order[index]];settings().colourPriority=order;save();renderPriority();});row.append(select);priorities.append(row);});}renderPriority();
+    function renderPriority(){
+        priorities.replaceChildren();priorities.className='hp-priority-list';let dragged=null;
+        const move=(source,target)=>{const order=priority(settings());order.splice(order.indexOf(source),1);order.splice(target,0,source);settings().colourPriority=order;save();renderPriority();};
+        priority(settings()).forEach((source,index)=>{const row=document.createElement('div');row.className='hp-priority-item';row.draggable=true;row.textContent=`⠿ ${index+1}. ${sourceLabels[source]}`;
+            row.addEventListener('dragstart',e=>{dragged=source;e.dataTransfer?.setData('text/plain',source);});
+            row.addEventListener('dragover',e=>e.preventDefault());row.addEventListener('drop',e=>{e.preventDefault();const value=dragged||e.dataTransfer?.getData('text/plain');if(sources.includes(value))move(value,index);});
+            const up=action('↑',()=>move(source,Math.max(0,index-1))),down=action('↓',()=>move(source,Math.min(sources.length-1,index+1)));up.disabled=index===0;down.disabled=index===sources.length-1;up.setAttribute('aria-label',`Move ${sourceLabels[source]} earlier`);down.setAttribute('aria-label',`Move ${sourceLabels[source]} later`);row.append(up,down);priorities.append(row);
+        });
+    }renderPriority();
     const previewTitle=document.createElement('b');previewTitle.textContent='Live styling preview';appearance.append(previewTitle);
     const preview=document.createElement('div');preview.className='hp-preview';preview.innerHTML='<span class="hp-monologue"><span class="hp-monologue-content"><span class="hp-monologue-name"></span><span class="hp-monologue-body">An ordinary thought, <strong>an important detail</strong>, and <span class="hp-quote">“a remembered voice.”</span></span><span class="hp-monologue-name hp-monologue-footer"></span></span></span>';
     previewElement=preview.querySelector('.hp-monologue');appearance.append(preview);
@@ -725,7 +746,7 @@ function addSettings(){
             const scope=action(item.scope?'Current character':'Global',()=>{
                 const old=item.scope||'',next=old?'':selectedCharacterKey();if(!old&&!next)return;
                 settings().overrides=settings().overrides.filter(x=>x!==item);storeOverride(item.name,{...item,scope:next});
-            });scope.disabled=!item.scope&&!selectedCharacterKey();scope.classList.add('hp-scope-toggle');
+            });styleScope(scope,item.scope);scope.disabled=!item.scope&&!selectedCharacterKey();scope.classList.add('hp-scope-toggle');
             const edit=action('Edit',()=>openOverrideDialog(item.name,'all',item));const remove=action('Remove',()=>{settings().overrides=settings().overrides.filter(x=>x!==item);context().saveSettingsDebounced();notifyOverrides();schedule();});row.append(name,enabled,picker,scope,edit,remove);rows.append(row);
         }
     }

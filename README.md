@@ -48,7 +48,7 @@ Colour memory is saved in chat metadata and shared by aliases of the same charac
 3. Model hex code.
 4. Remembered colour.
 
-The first available source wins. Change a priority selector to swap its position with another source. **Sample average portrait colour** must be enabled for the photo source; **Remember colours in this chat** must be enabled for memory. Missing or failed image samples fall through to the next source. Defaults preserve model colours unless a custom override is enabled or portrait sampling is turned on.
+The first available source wins. Drag sources into priority order, or use the up/down buttons. **Sample average portrait colour** must be enabled for the photo source; **Remember colours in this chat** must be enabled for memory. Missing or failed image samples fall through to the next source. Defaults preserve model colours unless a custom override is enabled or portrait sampling is turned on.
 
 Photo sampling uses a 32×32 rendering of the entire portrait, weighted by transparency. Fully transparent pixels are ignored. Results are cached for the session. Sampling does not send the image to an external service.
 
@@ -73,7 +73,7 @@ Corazón = Apothos
 Professor Bine = Ilya
 ```
 
-Aliases affect portraits and remembered colours. Labels retain the name written by the model. Alias chains are supported; cycles are safely ignored. Aliases are global preferences. Each speaker override can be **Global** or scoped to the **Current character**. Character scope is keyed by the selected card's avatar filename, so it applies across that character's chats. A matching character-scoped override takes precedence over a global override. Renaming the card file may require recreating scoped overrides.
+Aliases affect portraits and remembered colours. Labels retain the name written by the model. Alias chains are supported; cycles are safely ignored. Aliases are global preferences. Each speaker override can be **G (Global)** or **L (Local)**, scoped to the **Current character**. Character scope is keyed by the selected card's avatar filename, so it applies across that character's chats. A matching character-scoped override takes precedence over a global override. Renaming the card file may require recreating scoped overrides.
 
 The scope button is disabled when no character is selected and its current state is Global. A previously scoped override can still be switched back to Global. Overrides for other characters remain stored and reappear when those characters are selected. The main editor and each saved override row provide a colour picker and an enable checkbox. A colour-only override can leave portrait selection set to Automatic.
 
@@ -157,3 +157,13 @@ Syntax, manifest, and DOM behavior have automated checks. Image API calls are te
 ## License
 
 MIT. Original companion code. No Moonlit Echoes or Megumin Suite source is bundled.
+
+### New in 1.7.0
+
+Compact G/L scope buttons show blue for global and orange for character-local overrides. Hover for details. Colour pickers are square, and the initial settings use two columns. The portrait-source selector has an explanation and a small preview of the selected card. Native select menus do not reliably support image thumbnails across browsers.
+
+Empty portraits use a vertical photo strip on the right. Portrait dialogs offer replacement controls once, with explanatory text. The viewer’s top-right **Style colour** picker saves immediately to the speaker’s effective override, preserving its portrait and scope; a new override defaults to global. To make that colour take precedence, keep Custom override first in colour priority. New speaker entries retain colour selections when committing the name field.
+
+Saved-photo previews place Back at the top left, Close at the top right, the title centered, and a Select photo button with a green check beneath it. Open portraits fit the window without enlarging small originals.
+
+Right-aligned bubbles enlarge toward the top left. Full-width bubbles use 82% of the available width and enlarge from the center, leaving room for the maximum 20% hover enlargement. **Portrait crop** offers bubble-height, original proportions, 1:1, 2:3, and 3:2 layouts.

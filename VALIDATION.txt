@@ -1,24 +1,5 @@
-HivePack 1.6.0
-
-Automated checks:
-- JavaScript module syntax, manifest JSON/asset references, archive integrity.
-- Thought formatting, preserved inline markup, literal/rendered bold, quoted text across markup.
-- Colour-source priority and fallthrough; custom colour-only overrides.
-- Alpha-weighted average colour calculation, transparent pixels, asynchronous mocked image/canvas sampling, cache reuse and failed-image fallback.
-- Global and selected-character scopes; scoped precedence and no-character scope disabling.
-- Aliases, persona/active-character portraits, explicit unrelated-card overrides.
-- Appearance submenu, live preview updates, alignment classes, 20% hover cap.
-- Per-thought/message collapse controls, default collapse, auto-collapse previous messages.
-- Streaming completion gating and safe DOM observer settling.
-- Missing-portrait fallback modes and compact override editor opening.
-- Enlarged viewer, original card image URL and three override controls.
-- Uploaded-photo validation, preview, staged selection and explicit Add / replace commit.
-- Saved-photo popup: 25 entries per page, pagination, enlarged preview, Back/Select flow.
-- Scoped photo deletion, colour preservation, other-folder exclusion and server-failure preservation.
-
-DOM tests use linkedom with mocked SillyTavern context/events, FileReader, image loading/canvas, and API responses.
-Run: npm install, then npm test. The extension itself has no build step.
-
-Not completed:
-- Full-browser visual/layout checks, real image decoding/canvas sampling, native dialog focus/mobile behavior.
-- Live image upload/list/delete operations in a running SillyTavern installation.
+HivePack 1.7.0
+JavaScript module syntax check: passed.
+DOM regression suite: passed, including pending new-speaker colour saving, direct viewer colour persistence, portrait preservation, priority reordering, saved-photo preview navigation, upload staging and deletion.
+Full live SillyTavern/browser visual testing has not been performed.
+Native character-card selects use an adjacent selected-card thumbnail for browser compatibility.

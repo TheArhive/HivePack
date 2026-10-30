@@ -261,3 +261,41 @@ body.ripplestyle.rpp-enabled #chat > .mes > .rpp-column > .rpp-image {
 .hp-viewer-toolbar .menu_button { width: auto;margin: 0; }
 .hp-picker-dialog [hidden],.hp-portrait-dialog [hidden] { display: none!important; }
 .hp-override-dialog { width: min(540px,94vw); }
+
+/* Compact controls and safe portrait layouts. */
+.hp-checkbox-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px;margin:8px 0; }
+.hp-checkbox-grid .checkbox_label { margin:0;font-size:.9em;align-items:center; }
+.hp-scope-toggle { min-width:28px!important;padding:3px 6px!important; }
+.hp-scope-toggle[data-scope="global"] { color:#8dcfff; }
+.hp-scope-toggle[data-scope="local"] { color:#f2a35e; }
+:is(.hp-colour-control,.hp-override-row,.hp-quick-colour) input[type="color"] { box-sizing:border-box;width:28px!important;height:28px!important;min-width:28px;padding:1px!important;border:1px solid #71869e;border-radius:3px; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding:1px; }
+input[type="color"]::-webkit-color-swatch { border:0;border-radius:1px; }
+.hp-card-preview { display:inline-block;width:30px;height:30px;object-fit:cover;vertical-align:middle;margin-right:6px;border-radius:3px; }
+.hp-override-editor > label { display:block; }
+.hp-override-editor > .hp-colour-control { display:flex; }
+.hp-editor-actions[hidden] { display:none; }
+.hp-priority-item { display:flex;align-items:center;gap:5px;padding:6px 8px;margin:4px 0;border:1px solid #71869e;border-radius:5px;cursor:grab; }
+.hp-priority-item .menu_button { width:auto;margin:0;padding:2px 7px; }
+.hp-priority-item .menu_button:first-of-type { margin-left:auto; }
+.hp-quick-colour { margin-left:auto;display:flex;align-items:center;gap:5px; }
+.hp-portrait-dialog .hp-popup-content { display:flex;flex-direction:column;align-items:center;min-height:0; }
+.hp-portrait-dialog .hp-popup-content > img { display:block;width:auto;height:auto;max-width:100%;max-height:calc(90dvh - 220px);object-fit:contain;flex-shrink:1; }
+.hp-portrait-dialog .hp-viewer-toolbar { width:100%; }
+.hp-popup-header { display:grid;grid-template-columns:1fr auto 1fr; }
+.hp-popup-header > b { grid-column:2;grid-row:1;text-align:center; }
+.hp-popup-header > .hp-viewer-close { grid-column:3;grid-row:1;justify-self:end; }
+.hp-photo-back { grid-column:1;grid-row:1;justify-self:start;width:auto; }
+.hp-select-photo { display:block;width:fit-content;margin:0 auto 10px; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue.hp-align-right { transform-origin:bottom right; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue.hp-align-center { transform-origin:center; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue.hp-align-stretch { width:82%;max-width:82%;margin-left:auto;margin-right:auto;transform-origin:center; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue.hp-has-placeholder:not(.hp-collapsed) { display:grid;grid-template-columns:minmax(0,1fr) 24px;width:fit-content; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue.hp-has-placeholder.hp-align-stretch { width:82%; }
+:is(#chat .mes_text,.hp-preview) .hp-thought-placeholder { grid-column:2;grid-row:1;align-self:stretch;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;width:24px;box-sizing:border-box;margin:0;padding:5px 3px;border-width:0 0 0 1px;border-radius:0 var(--hp-radius,7px) var(--hp-radius,7px) 0; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue[data-hp-crop="square"] .hp-thought-portrait { aspect-ratio:1;align-self:center; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue[data-hp-crop="portrait"] .hp-thought-portrait { aspect-ratio:2/3;align-self:center; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue[data-hp-crop="landscape"] .hp-thought-portrait { aspect-ratio:3/2;align-self:center; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue[data-hp-crop="original"] .hp-thought-portrait { align-self:center; }
+:is(#chat .mes_text,.hp-preview) .hp-monologue[data-hp-crop="original"] .hp-thought-portrait img { position:static;width:100%;height:auto;object-fit:contain; }
+@media(max-width:500px) { .hp-checkbox-grid { grid-template-columns:1fr; } }
