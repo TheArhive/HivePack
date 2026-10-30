@@ -4,6 +4,8 @@
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
+![HivePack chat with a styled inner-thought bubble and right-side persona portrait](docs/screenshots/chat-example.png)
+
 ## Install and update
 
 1. Open **Extensions → Install extension** in SillyTavern.
@@ -20,6 +22,8 @@ The right-side persona portrait requires [Moonlit Echoes Theme](https://github.c
 
 The honey-and-beeswax panel opens from the **hive button** or **magic wand menu → HivePack Settings**. HivePack no longer adds settings to SillyTavern’s Extensions drawer. A subtle honeycomb texture, amber navigation, beeswax highlights, and a small bee illustration give the interface its hive identity. Controls sit on opaque dark surfaces for readability; the texture is removed automatically for higher-contrast system preferences. Preferences save automatically; portrait-override drafts are applied when **Add / replace override** is clicked.
 
+![HivePack General settings with honeycomb switches and grouped thought, dialogue, and shared controls](docs/screenshots/settings.png)
+
 The rounded square hive button has a cream-centred honey-orange gradient and starts beside the text input, 200 pixels left of its composer anchor. It is positioned in viewport coordinates, outside the composer’s clipping containers, and clamped horizontally and vertically to stay on screen. Saved custom positions are retained; use Reset floating button position to apply the new default. Dragging follows the pointer directly without animated position changes. Hovering adds a subtle enlargement and highlight, without slowing dragging. Drag it to a floating position; its location is remembered and kept inside the window when resized. Keyboard users can move the focused button with **Alt + arrow keys**. **General → Reset floating button position** restores the viewport-anchored default beside the input again.
 
 | Tab | Contents |
@@ -33,6 +37,8 @@ The rounded square hive button has a cream-centred honey-orange gradient and sta
 
 The live preview shows narration, coloured dialogue, a thought for the selected character, and a thought without an associated portrait. It updates as preferences change. On desktop the panel can be resized from its corner and remembers its size; on mobile it fills the screen. General and Appearance use compact columns, and the wider preview stays beside the controls on large screens.
 
+![Live preview showing narration, coloured dialogue, and thought bubbles with and without an assigned portrait](docs/screenshots/live-preview.png)
+
 ## Model instructions / Author’s Note
 
 Use the optional injection controls to send instructions automatically, or add the manual examples below to your own Author’s Note.
@@ -45,6 +51,8 @@ Open the **Prompt** tab. Placement controls are visible directly; the two prompt
 2. Choose the placement mode.
 3. In separate mode, set **Injection depth**. The default is 4; 0 places it at the most recent end of the chat. Values from 0 to 10,000 are accepted.
 4. Expand **Edit dialogue instructions** or **Edit thought instructions** to customise that section. Edits save automatically; each editor has its own **Reset to default**. Enabled, nonempty sections are combined inside a single `<ChatColor>` block.
+
+![Prompt injection settings with separate dialogue and thought switches, placement, depth, and editable instructions](docs/screenshots/prompt-injection.png)
 
 | Placement | Behaviour |
 | --- | --- |
@@ -186,6 +194,8 @@ Click dialogue to open the same speaker controls used by thought portraits: a po
 
 When **Dim other text when hovering a speaker** is enabled, hovering dialogue or a thought highlights that speaker throughout the message, including their aliases. Other speakers and narrative text are dimmed. Moving away clears the focus immediately, independently of the portrait linger delay.
 
+![Hovering dialogue highlights the speaker while dimming other text and showing the speaker name below the side portrait](docs/screenshots/dialogue-highlight.png)
+
 ### Create or edit an override
 
 In **Overrides → Add speaker overrides & aliases → Speaker portrait and colour overrides**:
@@ -221,6 +231,8 @@ Click the fallback beside a thought without an image to open the compact overrid
 The **upload icon** accepts PNG, JPEG, WebP, and GIF files up to 10 MB. Uploading stores the image immediately on your SillyTavern server, but you still need **Add / replace override** to assign it. Closing without saving leaves the upload available for reuse.
 
 The **Photos** tab loads the saved-photo gallery directly, with up to 25 images per page. Click a thumbnail to preview it, Back to return, or **✓ Select photo** to assign it to a speaker. The upload icon opens a portrait upload, and **Refresh photos** reloads the gallery. Override editors also offer **Browse saved photos** in a popup; that popup has Back at the top left, Close at the top right, and **✓ Select photo** beneath the title. Save the override to apply the assignment.
+
+![Saved-photo gallery with portrait thumbnails, deletion buttons, and page navigation](docs/screenshots/photo-gallery.png)
 
 **Delete photo** permanently deletes an uploaded image after confirmation. Its portrait assignments are cleared across scopes, retaining any custom colours. Failed uploads or deletions keep existing assignments. Photos use server-relative paths and remain available when accessing the same server from another device. Back up settings and uploaded images when moving servers.
 
