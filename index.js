@@ -1,7 +1,7 @@
 import { user_avatar } from '../../../../script.js';
 
 const KEY = 'hivepack';
-const defaults = { enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble', dialogueColours: true, dialoguePortraitHover: false, dialoguePriority: ['override','model','photo'] };
+const defaults = { masterEnabled: true, afterGeneration: false, samplingMethod: 'average', enabled: true, desktopWidth: 0, mobileWidth: 0, monologues: true, hover: true, thoughtPortraits: true, rememberColours: true, collapsible: true, aliases: '', overrides: [], bubbleWidth: 450, fontSize: 92, backgroundOpacity: 8, portraitWidth: 80, hoverStrength: 1.5, cornerRadius: 7, defaultCollapsed: false, autoCollapsePrevious: false, samplePortrait: false, colourPriority: ['override','photo','model','memory'], alignment: 'left', missingPortrait: 'picker', portraitCrop: 'bubble', dialogueColours: true, dialoguePortraitHover: false, dialoguePriority: ['override','model','photo'] };
 let queued = false;
 let revision = 0;
 let lastAvatar;
@@ -21,6 +21,12 @@ function schedule() {
 }
 function refresh() {
     const s = settings();
+    const previewHost=document.querySelector('.hp-preview');if(previewHost)previewHost.hidden=!s.masterEnabled;
+    if(!s.masterEnabled){
+        restoreThoughts(document);document.querySelectorAll('#chat .mes_text').forEach(unwrapDialogue);
+        document.querySelectorAll('#chat .rpp-column,#chat .hp-toggle-message-thoughts').forEach(node=>node.remove());for(const name of ['rpp-enabled','hivepack-hover'])if(document.body.classList.contains(name))document.body.classList.remove(name);return;
+    }
+    if(s.afterGeneration)document.querySelectorAll('#chat > .mes').forEach(mes=>{if(messageIsGenerating(mes)){restoreThoughts(mes);const holder=mes.querySelector('.mes_text');if(holder)unwrapDialogue(holder);dialogueHover.delete(mes);}});
     const active = s.enabled && document.body.classList.contains('ripplestyle') && Boolean(user_avatar);
     if (document.body.classList.contains('rpp-enabled') !== Boolean(active)) {
         document.body.classList.toggle('rpp-enabled', Boolean(active));
@@ -44,7 +50,7 @@ function refresh() {
     refreshMessageButtons(s);
     refreshLivePreview();
     document.querySelectorAll('#chat > .mes').forEach(mes => {
-        const eligible = active && mes.getAttribute('is_user') === 'false' && mes.getAttribute('is_system') !== 'true';
+        const eligible = active && !(s.afterGeneration&&messageIsGenerating(mes)) && mes.getAttribute('is_user') === 'false' && mes.getAttribute('is_system') !== 'true';
         let column = mes.querySelector(':scope > .rpp-column');
         if (!eligible) { column?.remove(); return; }
         if (!column) {
@@ -67,13 +73,26 @@ function refresh() {
     });
 }
 
+let activeGeneration=null;
+const endedProcessors=new WeakSet();
+function restoreThoughts(root){root.querySelectorAll('#chat .hp-monologue, .mes_text .hp-monologue').forEach(card=>{const original=originals.get(card);if(original)card.replaceWith(original);});}
+function messageIsGenerating(mes){
+    if(!mes)return false;const c=context(),id=Number(mes.getAttribute('mesid')),processor=c.streamingProcessor;
+    if(processor && !endedProcessors.has(processor) && !processor.isFinished && !processor.isStopped && (Number(processor.messageId)===id||processor.messageDom===mes))return true;
+    if(!activeGeneration || activeGeneration.chat!==c.chat)return false;
+    return id>=activeGeneration.length || (['swipe','continue','append','regenerate'].includes(activeGeneration.type)&&id===activeGeneration.lastAI);
+}
 // Decorate existing text nodes only. Never rebuild a message or write chat text.
 const dialogueRender=new WeakMap(),dialogueHover=new WeakMap();
 function dialoguePriority(s){const allowed=['override','photo','model'];return [...new Set([...(Array.isArray(s.dialoguePriority)?s.dialoguePriority:[]).filter(x=>allowed.includes(x)),...allowed])];}
 function dialogueBlocks(source){
-    return source.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)/g).flatMap((part,index)=>index%2?[]:[...part.matchAll(/<charcolor\s*=\s*(#[0-9a-f]{6})\s*\|\s*([^<>\n]+?)\s*>([\s\S]*?)<\/charcolor\s*>/gi)].map(match=>({hex:match[1],name:match[2].trim(),body:match[3]})));
+    return source.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)/g).flatMap((part,index)=>{
+        if(index%2)return [];
+        const pattern=/<c>\s*([^<>\n|]+?)\s*\|\s*(#[0-9a-f]{6})\s*:\s*([\s\S]*?)<\/c\s*>|<charcolor\s*=\s*(#[0-9a-f]{6})\s*\|\s*([^<>\n]+?)\s*>([\s\S]*?)<\/charcolor\s*>/gi;
+        return [...part.matchAll(pattern)].map(match=>({hex:match[2]||match[4],name:(match[1]||match[5]).trim(),body:match[3]??match[6],header:match[1]?(/^<c>(\s*[^<>\n|]+?\s*\|\s*#[0-9a-f]{6}\s*:\s*)/i.exec(match[0])?.[1]||''):''}));
+    });
 }
-function unwrapDialogue(holder){holder.querySelectorAll('.hp-dialogue').forEach(span=>span.replaceWith(...Array.from(span.childNodes)));}
+function unwrapDialogue(holder){holder.querySelectorAll('.hp-dialogue-header').forEach(span=>span.replaceWith(...Array.from(span.childNodes)));holder.querySelectorAll('.hp-dialogue').forEach(span=>span.replaceWith(...Array.from(span.childNodes)));}
 function decorateDialogue(holder,source,s){
     const blocks=s.dialogueColours?dialogueBlocks(source):[],signature=JSON.stringify(blocks);
     const previous=dialogueRender.get(holder),visible=holder.textContent;
@@ -90,18 +109,30 @@ function decorateDialogue(holder,source,s){
         probe.innerHTML=context().messageFormatting(block.body,context().name2,false,false,-1);
         const needle=probe.textContent.replace(/\s+/g,' ').trim();if(!needle)return;
         const walker=document.createTreeWalker(holder,NodeFilter.SHOW_TEXT),nodes=[];let text='';
-        while(walker.nextNode()){const node=walker.currentNode;if(node.parentElement?.closest('pre,code,.hp-dialogue'))continue;nodes.push({node,start:text.length,end:text.length+node.data.length});text+=node.data;}
+        while(walker.nextNode()){const node=walker.currentNode;if(node.parentElement?.closest('pre,code,.hp-dialogue,.hp-dialogue-header'))continue;nodes.push({node,start:text.length,end:text.length+node.data.length});text+=node.data;}
         // Normalize whitespace while retaining offsets into the existing DOM text.
         let normalized='',offsets=[];
         for(let i=0;i<text.length;i++){const char=/\s/.test(text[i])?' ':text[i];if(char===' '&&normalized.endsWith(' '))continue;normalized+=char;offsets.push(i);}
-        const at=normalized.indexOf(needle,cursor);if(at<0)return;
+        let at=normalized.indexOf(needle,cursor);if(at<0)return;
+        if(block.header){const header=block.header.replace(/\s+/g,' ').trim(),headerAt=normalized.indexOf(header,cursor);if(headerAt>=0){const bodyAt=normalized.indexOf(needle,headerAt+header.length);if(bodyAt>=0&&normalized.slice(headerAt+header.length,bodyAt).trim()==='')at=bodyAt;}}
+        let nextCursor=at;
+        if(block.header){const header=block.header.replace(/\s+/g,' ').trim();const headerAt=normalized.indexOf(header,cursor);if(headerAt>=0 && headerAt<=at){const hs=offsets[headerAt],he=offsets[headerAt+header.length-1]+1;
+            // Hide only an exact, adjacent header. Keep its text for reversible toggles.
+            if(normalized.slice(headerAt+header.length,at).trim()===''){nextCursor=headerAt;
+                for(const item of nodes){const left=Math.max(hs,item.start)-item.start,right=Math.min(he,item.end)-item.start;if(right<=left)continue;const prefix=document.createElement('span');prefix.className='hp-dialogue-header';prefix.textContent=item.node.data.slice(left,right);
+                    // Defer header insertion until after dialogue spans have used the original offsets.
+                    item.header={left,right,prefix};
+                }
+            }
+        }}
         const start=offsets[at],end=offsets[at+needle.length-1]+1;
-        for(const item of nodes){const left=Math.max(start,item.start)-item.start,right=Math.min(end,item.end)-item.start;if(right<=left)continue;
-            const span=document.createElement('span');span.className='hp-dialogue';span.dataset.hpSpeaker=block.name;span.dataset.hpExplicitColour=block.hex;span.dataset.hpDialogueIndex=String(index);span.textContent=item.node.data.slice(left,right);
-            const parts=[];if(left)parts.push(document.createTextNode(item.node.data.slice(0,left)));parts.push(span);if(right<item.node.data.length)parts.push(document.createTextNode(item.node.data.slice(right)));item.node.replaceWith(...parts);
+        for(const item of nodes){const left=Math.max(start,item.start)-item.start,right=Math.min(end,item.end)-item.start;const replacements=[];
+            if(right>left){const span=document.createElement('span');span.className='hp-dialogue';span.dataset.hpSpeaker=block.name;span.dataset.hpExplicitColour=block.hex;span.dataset.hpDialogueIndex=String(index);span.textContent=item.node.data.slice(left,right);replacements.push({left,right,node:span});}
+            if(item.header)replacements.push({...item.header,node:item.header.prefix});if(!replacements.length)continue;
+            replacements.sort((a,b)=>a.left-b.left);const parts=[];let position=0;for(const replacement of replacements){if(replacement.left>position)parts.push(document.createTextNode(item.node.data.slice(position,replacement.left)));parts.push(replacement.node);position=replacement.right;}if(position<item.node.data.length)parts.push(document.createTextNode(item.node.data.slice(position)));item.node.replaceWith(...parts);
         }
         // Newly decorated nodes are excluded on the next search; continue with the remaining text.
-        cursor=at;
+        cursor=nextCursor;
     });
     dialogueRender.set(holder,{signature,text:holder.textContent,count:holder.querySelectorAll('.hp-dialogue').length});
 }
@@ -110,7 +141,7 @@ function refreshDialogue(s){
     if(hoverToggle){hoverToggle.disabled=!s.enabled;hoverToggle.closest('label').classList.toggle('hp-setting-disabled',!s.enabled);hoverToggle.title=s.enabled?'Show the dialogue speaker in the right-side Ripple portrait while hovering':'Enable Show persona beside full messages first';}
     document.querySelectorAll('#chat > .mes[is_user="false"]:not([is_system="true"])').forEach(mes=>{
         const holder=mes.querySelector('.mes_text'),id=Number(mes.getAttribute('mesid')),message=context().chat?.[id];if(!holder||!message)return;
-        const source=message.mes;if(typeof source!=='string')return;
+        const source=message.mes;if(typeof source!=='string'||s.afterGeneration&&messageIsGenerating(mes))return;
         decorateDialogue(holder,source,s);
         if(!s.dialogueColours)dialogueHover.delete(mes);
         holder.querySelectorAll('.hp-dialogue').forEach(span=>{
@@ -119,7 +150,7 @@ function refreshDialogue(s){
             for(const key of dialoguePriority(s)){if(key==='photo'){const src=resolvePortrait(span.dataset.hpSpeaker,s);values.photo=src?requestPhotoColour(src):null;}if(/^#[0-9a-f]{6}$/i.test(values[key]||'')){span.style.setProperty('--hp-dialogue-colour',values[key]);break;}}
             if(!s.dialogueColours)span.style.removeProperty('--hp-dialogue-colour');
             if(!span.hpHoverBound){span.hpHoverBound=true;
-                span.addEventListener('mouseenter',()=>{const current=settings();if(current.dialogueColours&&current.dialoguePortraitHover&&current.enabled&&resolvePortrait(span.dataset.hpSpeaker,current)){dialogueHover.set(mes,span);schedule();}});
+                span.addEventListener('mouseenter',()=>{const current=settings();if(current.masterEnabled&&current.dialogueColours&&current.dialoguePortraitHover&&current.enabled&&resolvePortrait(span.dataset.hpSpeaker,current)){dialogueHover.set(mes,span);schedule();}});
                 span.addEventListener('mouseleave',event=>{const next=event.relatedTarget?.closest?.('.hp-dialogue');if(next && next.closest('.mes')===mes && next.dataset.hpSpeaker===span.dataset.hpSpeaker){dialogueHover.set(mes,next);return;}if(dialogueHover.get(mes)===span){dialogueHover.delete(mes);schedule();}});
             }
         });
@@ -140,7 +171,7 @@ function refreshMonologues(s) {
         return;
     }
     document.querySelectorAll('#chat > .mes[is_user="false"]:not([is_system="true"]) .mes_text i').forEach(italic => {
-        if (!thoughtIsComplete(italic)) return;
+        if (s.afterGeneration&&messageIsGenerating(italic.closest('.mes')) || !thoughtIsComplete(italic)) return;
         if (italic.closest('pre, code, .hp-monologue') || italic.querySelector('i')) return;
         // Same name/body semantics as the user's regex, applied to rendered italic elements.
         const text = italic.textContent;
@@ -182,6 +213,7 @@ function refreshMonologues(s) {
         italic.replaceWith(card);
     });
     document.querySelectorAll('#chat .hp-monologue').forEach(card => {
+        if(s.afterGeneration&&messageIsGenerating(card.closest('.mes')))return;
         applyThoughtColour(card, s);
         applyAlignment(card,s);
         updateCollapse(card, s);
@@ -484,10 +516,19 @@ function openPortraitViewer(src,title='Portrait') {
     const colour=document.createElement('input');colour.type='color';colour.setAttribute('aria-label','Set speaker style colour immediately');
     colour.value=findOverride(title,settings())?.colour||'#91a8c5';
     const disable=action('Disable colour override',()=>{const existing=findOverride(title,settings());if(existing)storeOverride(title,{...existing,colour:''});disable.hidden=true;});disable.hidden=!findOverride(title,settings())?.colour;
-    colour.addEventListener('change',()=>{const existing=findOverride(title,settings());storeOverride(title,{...(existing||{}),colour:colour.value});disable.hidden=false;});quick.append(colour,disable);toolbar.append(quick);
+    colour.addEventListener('change',()=>{const existing=findOverride(title,settings());storeOverride(title,{...(existing||{}),colour:colour.value});disable.hidden=false;});const pipette=action('⌖',()=>{sampling=!sampling;pipette.setAttribute('aria-pressed',String(sampling));img.classList.toggle('hp-sampling',sampling);help.textContent=sampling?'Click a point on the photo to save its colour. Click the pipette again to cancel.':'Choose a button to replace the portrait, or pick a style colour.';});pipette.title='Sample colour from this photo';pipette.setAttribute('aria-label','Sample colour from photo');pipette.setAttribute('aria-pressed','false');pipette.disabled=true;let sampling=false;
+    quick.append(pipette,colour,disable);toolbar.append(quick);
     const img=document.createElement('img');img.src=imagePath;img.alt=title;
     const error=document.createElement('p');error.hidden=true;error.textContent='Could not load this portrait.';
-    img.addEventListener('error',()=>{img.hidden=true;error.hidden=false;});
+    img.addEventListener('load',()=>{pipette.disabled=false;});
+    img.addEventListener('click',event=>{if(!sampling)return;event.preventDefault();event.stopPropagation();
+        try{const bounds=img.getBoundingClientRect();if(!bounds.width||!bounds.height||!img.naturalWidth||!img.naturalHeight)throw new Error('Wait for the photo to load.');
+            const x=Math.min(img.naturalWidth-1,Math.max(0,Math.floor((event.clientX-bounds.left)/bounds.width*img.naturalWidth))),y=Math.min(img.naturalHeight-1,Math.max(0,Math.floor((event.clientY-bounds.top)/bounds.height*img.naturalHeight)));
+            const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const ctx=canvas.getContext('2d',{willReadFrequently:true});if(!ctx)throw new Error('Photo sampling is unavailable.');ctx.drawImage(img,x,y,1,1,0,0,1,1);const pixel=ctx.getImageData(0,0,1,1).data;const hex=averagePixels(pixel);if(!hex)throw new Error('That pixel is transparent. Choose another point.');
+            colour.value=hex;const existing=findOverride(title,settings());storeOverride(title,{...(existing||{}),colour:hex});disable.hidden=false;sampling=false;pipette.setAttribute('aria-pressed','false');img.classList.remove('hp-sampling');help.textContent='Sampled colour saved for '+title+'.';
+        }catch(failure){help.textContent=failure.message;}
+    });
+    img.addEventListener('error',()=>{img.hidden=true;error.hidden=false;pipette.disabled=true;});
     view.content.append(toolbar,help,img,error);
 }
 async function listPortraitPhotos() {
@@ -515,7 +556,7 @@ async function deletePortraitPhoto(image) {
     context().saveSettingsDebounced();
 }
 const sources=['override','photo','model','memory'];
-const sourceLabels={override:'Custom override colour',photo:'Average portrait colour',model:'Model hex code',memory:'Remembered colour'};
+const sourceLabels={override:'Custom override colour',photo:'Portrait colour',model:'Model hex code',memory:'Remembered colour'};
 const overrideListeners=new Set();
 function notifyOverrides(){for(const callback of overrideListeners)callback();}
 function selectedCharacterKey(){const c=context();return c.characters?.[c.characterId]?.avatar || '';}
@@ -545,15 +586,32 @@ function averagePixels(pixels){
     if(!total)return null;
     return '#'+[r,g,b].map(x=>Math.round(x/total).toString(16).padStart(2,'0')).join('');
 }
+function samplePixels(pixels,width,height,method){
+    if(method==='average')return averagePixels(pixels);
+    const rgbToHex=rgb=>'#'+rgb.map(x=>Math.round(x).toString(16).padStart(2,'0')).join('');
+    if(method==='background'){
+        const edges=new Map();for(let i=0;i<pixels.length;i+=4){const x=(i/4)%width,y=Math.floor(i/4/width);if(x>1&&x<width-2&&y>1&&y<height-2||!pixels[i+3])continue;const key=[pixels[i]>>4,pixels[i+1]>>4,pixels[i+2]>>4].join(',');const bin=edges.get(key)||{weight:0,rgb:[0,0,0]};const alpha=pixels[i+3]/255;bin.weight+=alpha;for(let j=0;j<3;j++)bin.rgb[j]+=pixels[i+j]*alpha;edges.set(key,bin);}
+        const dominant=[...edges.values()].sort((a,b)=>b.weight-a.weight)[0];if(!dominant)return averagePixels(pixels);const bg=dominant.rgb.map(x=>x/dominant.weight),sum=[0,0,0];let total=0;
+        for(let i=0;i<pixels.length;i+=4){const distance=Math.hypot(...bg.map((x,j)=>pixels[i+j]-x));if(distance<65)continue;const weight=pixels[i+3]/255;total+=weight;for(let j=0;j<3;j++)sum[j]+=pixels[i+j]*weight;}
+        return total?rgbToHex(sum.map(x=>x/total)):averagePixels(pixels);
+    }
+    const bins=new Map();for(let i=0;i<pixels.length;i+=4){const rgb=Array.from(pixels.slice(i,i+3)),max=Math.max(...rgb),min=Math.min(...rgb),sat=max?(max-min)/max:0;
+        const x=((i/4)%width+.5)/width,y=(Math.floor(i/4/width)+.5)/height,center=.15+.85*Math.exp(-5*((x-.5)**2+(y-.45)**2));
+        const weight=pixels[i+3]/255*(.02+4*sat*sat)*center*(max<35||min>235?.1:1);if(!weight)continue;
+        const key=rgb.map(x=>x>>4).join(','),bin=bins.get(key)||{weight:0,rgb:[0,0,0]};bin.weight+=weight;for(let j=0;j<3;j++)bin.rgb[j]+=rgb[j]*weight;bins.set(key,bin);
+    }
+    const best=[...bins.values()].sort((a,b)=>b.weight-a.weight)[0];return best?rgbToHex(best.rgb.map(x=>x/best.weight)):averagePixels(pixels);
+}
 function requestPhotoColour(src){
     const url=fullPortraitSource(src);if(!url)return null;
-    if(photoColours.has(url))return photoColours.get(url).colour;
-    const entry={colour:null};photoColours.set(url,entry);
+    const method=settings().samplingMethod,key=method==='average'?url:`${method}:${url}`;
+    if(photoColours.has(key))return photoColours.get(key).colour;
+    const entry={colour:null};photoColours.set(key,entry);
     if(typeof Image==='undefined')return null;
     const image=new Image();
     image.onload=()=>{
         try{const canvas=document.createElement('canvas');canvas.width=32;canvas.height=32;const ctx=canvas.getContext('2d',{willReadFrequently:true});
-            if(ctx){ctx.drawImage(image,0,0,32,32);entry.colour=averagePixels(ctx.getImageData(0,0,32,32).data);}
+            if(ctx){ctx.drawImage(image,0,0,32,32);entry.colour=samplePixels(ctx.getImageData(0,0,32,32).data,32,32,method);}
         }catch{entry.colour=null;}
         schedule();
     };
@@ -769,8 +827,9 @@ function addSettings(){
     panel.innerHTML='<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>HivePack</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content hp-settings-content"></div></div>';
     const area=panel.querySelector('.hp-settings-content');
     const save=()=>{context().saveSettingsDebounced();schedule();};
+    const master=document.createElement('label');master.className='checkbox_label hp-master-toggle';const masterInput=document.createElement('input');masterInput.type='checkbox';masterInput.dataset.rpp='masterEnabled';masterInput.checked=settings().masterEnabled;master.append(masterInput,document.createTextNode('Enable HivePack'));masterInput.addEventListener('change',()=>{settings().masterEnabled=masterInput.checked;save();});area.append(master);
     const checks=document.createElement('div');checks.className='hp-checkbox-grid';area.append(checks);
-    for(const [key,title] of Object.entries({monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',samplePortrait:'Sample average portrait colour',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)',dialogueColours:'Colour charcolor dialogue',dialoguePortraitHover:'Show dialogue speaker portrait on hover (Ripple only)'})){
+    for(const [key,title] of Object.entries({afterGeneration:'Apply styling after generation finishes (prevents flashing)',monologues:'Style inner monologues',hover:'Hover highlight and enlargement',thoughtPortraits:'Show thought portraits',samplePortrait:'Sample portrait colour',rememberColours:'Remember colours in this chat',collapsible:'Click speaker labels to collapse thoughts',defaultCollapsed:'Start new thought cards collapsed',autoCollapsePrevious:'Collapse earlier messages after a new AI response',enabled:'Show persona beside full messages (Ripple only)',dialogueColours:'Colour character dialogue (<c>)',dialoguePortraitHover:'Show dialogue speaker portrait on hover (Ripple only)'})){
         const label=document.createElement('label');label.className='checkbox_label';const input=document.createElement('input');input.type='checkbox';input.dataset.rpp=key;input.checked=Boolean(settings()[key]);label.append(input,document.createTextNode(title));input.addEventListener('change',()=>{settings()[key]=input.checked;save();});checks.append(label);
     }
     const appearance=document.createElement('details');appearance.className='hp-appearance';const summary=document.createElement('summary');summary.textContent='Appearance';appearance.append(summary);area.append(appearance);
@@ -781,6 +840,7 @@ function addSettings(){
     function selection(key,title,options){const label=document.createElement('label');label.textContent=title;const select=document.createElement('select');select.className='text_pole';select.dataset.rpp=key;
         for(const [value,text] of options){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}select.value=settings()[key];select.addEventListener('change',()=>{settings()[key]=select.value;save();});label.append(select);appearance.append(label);
     }
+    selection('samplingMethod','Portrait colour sampling',[['average','Average'],['vibrant','Vibrant + center-weighted'],['background','Ignore background']]);
     selection('alignment','Thought alignment',[['left','Left'],['center','Centered'],['right','Right'],['stretch','Full message width']]);
     selection('portraitCrop','Portrait crop',[['bubble','Match bubble height'],['original','Original image proportions'],['square','1:1'],['portrait','2:3'],['landscape','3:2']]);
     selection('missingPortrait','Missing portrait appearance',[['picker','Compact photo picker'],['initials','Speaker initials'],['silhouette','Silhouette']]);
@@ -798,7 +858,7 @@ function addSettings(){
     const dialogueHeading=document.createElement('b');dialogueHeading.textContent='Dialogue colour priority (first available wins)';appearance.append(dialogueHeading);
     const dialogueList=document.createElement('div');dialogueList.className='hp-dialogue-priority';appearance.append(dialogueList);
     function renderDialoguePriority(){dialogueList.replaceChildren();let dragged=null;
-        const labels={override:'Override',photo:'Photo average',model:'HEX in message'};
+        const labels={override:'Override',photo:'Photo colour',model:'HEX in message'};
         const move=(source,index)=>{const order=dialoguePriority(settings());order.splice(order.indexOf(source),1);order.splice(index,0,source);settings().dialoguePriority=order;save();renderDialoguePriority();};
         dialoguePriority(settings()).forEach((source,index)=>{const row=document.createElement('div');row.className='hp-priority-item';row.draggable=true;row.textContent=`⠿ ${index+1}. ${labels[source]}`;
             row.addEventListener('dragstart',e=>{dragged=source;e.dataTransfer?.setData('text/plain',source);});row.addEventListener('dragover',e=>e.preventDefault());row.addEventListener('drop',e=>{e.preventDefault();const value=dragged||e.dataTransfer?.getData('text/plain');if(['override','photo','model'].includes(value))move(value,index);});
@@ -837,13 +897,14 @@ function init() {
     const events = c.eventTypes ?? c.event_types;
     if(events.GENERATION_STARTED)c.eventSource.on(events.GENERATION_STARTED,(type,options,dryRun)=>{
         const ctx=context();
+        activeGeneration=!dryRun&&!['quiet','impersonate'].includes(type)?{chat:ctx.chat,length:ctx.chat?.length||0,lastAI:ctx.chat?.findLastIndex(x=>!x.is_user&&!x.is_system),type}:null;if(ctx.streamingProcessor)endedProcessors.delete(ctx.streamingProcessor);schedule();
         generationSnapshot=!dryRun && !['quiet','impersonate'].includes(type) ? {chat:ctx.chat,id:ctx.getCurrentChatId?.() ?? ctx.chatId,last:ctx.chat?.at(-1)?.mes,length:ctx.chat?.length} : null;
     });
     if(events.GENERATION_ENDED)c.eventSource.on(events.GENERATION_ENDED,()=>{
-        const snapshot=generationSnapshot;generationSnapshot=null;const ctx=context();
+        const snapshot=generationSnapshot;generationSnapshot=null;const ctx=context();activeGeneration=null;if(ctx.streamingProcessor)endedProcessors.add(ctx.streamingProcessor);schedule();
         if(!snapshot || snapshot.chat!==ctx.chat || snapshot.id!==(ctx.getCurrentChatId?.() ?? ctx.chatId))return;
         if(snapshot.length===ctx.chat?.length && snapshot.last===ctx.chat?.at(-1)?.mes)return;
-        if(!settings().autoCollapsePrevious || !settings().collapsible)return;
+        if(!settings().masterEnabled || !settings().autoCollapsePrevious || !settings().collapsible)return;
         const latest=ctx.chat?.findLastIndex(message=>!message.is_user && !message.is_system) ?? -1;
         if(latest<0)return;autoCollapseBefore=latest;
         document.querySelectorAll('#chat > .mes').forEach(mes=>{
@@ -853,7 +914,8 @@ function init() {
     });
     for (const name of ['CHAT_CHANGED', 'CHARACTER_MESSAGE_RENDERED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'PERSONA_CHANGED', 'PERSONA_UPDATED', 'GENERATION_ENDED', 'GENERATION_STOPPED', 'STREAM_TOKEN_RECEIVED', 'CHARACTER_EDITED']) {
         if (events[name]) c.eventSource.on(events[name], () => {
-            if (name === 'CHAT_CHANGED') { collapsedThoughts.clear();knownThoughts.clear();autoCollapseBefore=-1;generationSnapshot=null;savedColourSignature=''; }
+            if(name==='GENERATION_STOPPED'){activeGeneration=null;if(context().streamingProcessor)endedProcessors.add(context().streamingProcessor);}
+            if (name === 'CHAT_CHANGED') { collapsedThoughts.clear();knownThoughts.clear();autoCollapseBefore=-1;generationSnapshot=null;activeGeneration=null;savedColourSignature=''; }
             if (name==='CHARACTER_EDITED') photoColours.clear();
             if (['CHAT_CHANGED','CHARACTER_EDITED'].includes(name)) notifyOverrides();
             if (name.startsWith('PERSONA_')) lastAvatar = undefined;

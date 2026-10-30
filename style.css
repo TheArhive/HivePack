@@ -315,3 +315,9 @@ input[type="color"]::-webkit-color-swatch { border:0;border-radius:1px; }
 #chat .mes_text .hp-dialogue,
 #chat .mes_text .hp-dialogue :is(q,em,strong,b,i,font,span) { color:var(--hp-dialogue-colour,inherit)!important; }
 .hp-setting-disabled { opacity:.45;cursor:not-allowed; }
+
+.hp-settings-content > .hp-master-toggle { display:flex;justify-content:center;align-items:center;gap:8px;margin:12px 0;font-weight:600; }
+.hp-dialogue-header { display:none!important; }
+.hp-portrait-dialog img.hp-sampling { cursor:crosshair; }
+.hp-quick-colour button[aria-pressed="true"] { outline:2px solid #8dcfff; }
+.hp-preview[hidden] { display:none!important; }

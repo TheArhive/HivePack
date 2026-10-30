@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.8.1** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.9.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack changes the chat display. It does not rewrite saved messages, prompts, or injections. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -14,7 +14,7 @@ Update through SillyTavern’s extension manager, then refresh. Disable any old 
 
 The right-side persona portrait requires [Moonlit Echoes Theme](https://github.com/RivelleDays/SillyTavern-MoonlitEchoesTheme) with **Ripple style** selected. Thought cards, their portraits, and dialogue colours work with other themes.
 
-[Megumin Suite](https://github.com/Arif-salah/Megumin-Suite-Beta) is used in the original setup for coloured dialogue, but is **optional**. Your preset can handle dialogue colours, or you can use HivePack’s `<charcolor>` feature below.
+[Megumin Suite](https://github.com/Arif-salah/Megumin-Suite-Beta) is used in the original setup for coloured dialogue, but is **optional**. Your preset can handle dialogue colours, or you can use HivePack’s `<c>` feature below.
 
 ## Model instructions / Author’s Note
 
@@ -37,31 +37,34 @@ Thoughts can belong to any character in the scene, including your persona. `<i>N
 
 ### Coloured dialogue
 
-Enable **Colour charcolor dialogue**, then add this instruction:
+Enable **Colour character dialogue (<c>)**, then add this instruction:
 
 ```text
-Assign a distinct, readable hex color to every characters dialogue using: <charcolor=#HEXCODE | Character Name>"Dialogue here"</charcolor>. Once assigned, a character's color is LOCKED for the entire story. Wrap ALL dialogue with these blocks.
-Eg: <charcolor=#35BD5A| Diane>"Can you believe this?"</charcolor>
+Assign a distinct, readable hex color to every characters dialogue using: <c>Character Name | #HEXCODE: "Dialogue here"</c>. Once assigned, a character's color is LOCKED for the entire story. Wrap ALL dialogue with these blocks.
+Eg: <c>Diane | #35BD5A: "Can you believe this?"</c>
 ```
 
-Both `<charcolor=#35BD5A|Diane>` and `<charcolor=#35BD5A | Diane>` are accepted. A closing `</charcolor>` is required. HEX codes must have six digits.
+Use `<c>Name | #RRGGBB: "Dialogue here"</c>`. Whitespace around the name, separator, and colour is allowed. A closing `</c>` and six HEX digits are required. HivePack hides the name/colour header while enabled; the saved text stays intact. Old `<charcolor=#35BD5A|Diane>…</charcolor>` blocks remain supported in existing chats.
 
 HivePack colours matching dialogue already rendered by SillyTavern, retaining its surrounding markup and formatting. It does not rebuild the message. If another extension rewrites the dialogue so it cannot be matched, HivePack leaves that passage alone. Code examples and user/system messages are excluded.
 
 ## Main settings
 
+The centred **Enable HivePack** switch sits above the other settings. Turning it off removes HivePack’s thought cards, dialogue colours and hidden headers, side portraits, and collapse controls. It also pauses colour learning. Your preferences and overrides are retained.
+
 | Setting | What it does |
 | --- | --- |
+| Apply styling after generation finishes (prevents flashing) | Defers thought cards, dialogue styling, and the side portrait for the generating message until generation ends or is stopped. Older messages stay styled. Off by default. |
 | Style inner monologues | Turns recognised thoughts into styled cards. |
 | Hover highlight and enlargement | Highlights and enlarges thought cards on hover. |
 | Show thought portraits | Shows a portrait or a clickable fallback beside thoughts. |
-| Sample average portrait colour | Makes portrait colours available for thought styling. |
+| Sample portrait colour | Makes portrait colours available for thought styling. |
 | Remember colours in this chat | Learns valid thought-header colours in the current chat. |
 | Click speaker labels to collapse thoughts | Enables individual and per-message collapse controls. |
 | Start new thought cards collapsed | Sets the initial state of newly displayed thoughts. |
 | Collapse earlier messages after a new AI response | Collapses older thoughts after a new response finishes. |
 | Show persona beside full messages (Ripple only) | Adds your persona portrait to the right of AI messages. |
-| Colour charcolor dialogue | Enables dialogue colouring. On by default. |
+| Colour character dialogue (<c>) | Enables dialogue colouring. On by default. |
 | Show dialogue speaker portrait on hover (Ripple only) | Temporarily replaces the right-side persona portrait with the dialogue speaker. Off by default. |
 
 The dialogue hover option is greyed out unless **Show persona beside full messages** is enabled. It requires Ripple style. Moving away restores the persona portrait; missing or failed speaker images leave or restore the persona.
@@ -76,12 +79,20 @@ Each list uses the first available source. Drag entries to reorder them, or use 
 
 | List | Sources | Default order |
 | --- | --- | --- |
-| Thought colour priority | Override, Photo average, Model HEX, Remembered colour | Override → Photo average → Model HEX → Remembered colour |
-| Dialogue colour priority | Override, Photo average, HEX in message | Override → HEX in message → Photo average |
+| Thought colour priority | Override, Photo colour, Model HEX, Remembered colour | Override → Photo colour → Model HEX → Remembered colour |
+| Dialogue colour priority | Override, Photo colour, HEX in message | Override → HEX in message → Photo colour |
 
-Thought photo sampling requires **Sample average portrait colour**; remembered thought colours require **Remember colours in this chat**. Dialogue photo sampling is independent of the thought sampling toggle. Missing images, pending samples, and failed samples fall through to the next source.
+Thought photo sampling requires **Sample portrait colour**; remembered thought colours require **Remember colours in this chat**. Dialogue photo sampling is independent of the thought sampling toggle. Missing images, pending samples, and failed samples fall through to the next source.
 
-Photo sampling averages the entire image using a 32×32 rendering, weighted by transparency, and caches the result for the session. No external image service is used. Dialogue uses the selected colour directly. Thought labels, borders, and backgrounds use it as a tint; bold thought text uses a darker shade and double-quoted text a lighter shade, adjusted for contrast.
+Choose **Appearance → Portrait colour sampling** for both thought and dialogue photo colours:
+
+| Method | Behaviour |
+| --- | --- |
+| Average | Averages the whole photo. This preserves the original behaviour and is the default. |
+| Vibrant + center-weighted | Favours saturated colours and central pixels, then selects a prominent colour group rather than blending different hues together. |
+| Ignore background | Estimates the dominant background colour from the image edges, excludes similar pixels, and averages what remains. Falls back to Average if nothing remains. |
+
+Sampling uses a 32×32 rendering, ignores transparent pixels, and caches results separately for each method. These are colour heuristics, not subject recognition: a colourful background can still influence the result, and matching clothes/background colours may be excluded together. No external image service is used. Dialogue uses the selected colour directly. Thought labels, borders, and backgrounds use it as a tint; bold thought text uses a darker shade and double-quoted text a lighter shade, adjusted for contrast.
 
 ### Layout controls
 
@@ -149,7 +160,7 @@ Open **Existing speaker overrides** to browse compact cards with portrait thumbn
 
 Click a thought portrait to open a larger view, scaled down to fit the browser without enlarging small images. Use Close, Escape, or the backdrop to dismiss it. Portraits and missing-portrait controls also support Enter/Space.
 
-The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
+The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
 
 Click the fallback beside a thought without an image to open the compact override editor. Its selection and colour controls are centred, with a green-check save button at the bottom.
 
@@ -169,14 +180,14 @@ Collapse choices last for the chat session and reset on chat switches or page re
 
 Automatic collapse of older messages runs after a changed AI response finishes. Quiet/background generations, dry runs, and unchanged replies do not trigger it. The latest response follows the initial collapsed setting.
 
-Thoughts wait for a closing `</i>`, and dialogue waits for `</charcolor>`. Complete blocks can be styled while the rest of a response streams. Unfinished blocks remain undecorated.
+Thoughts wait for a closing `</i>`, and dialogue waits for `</c>` (or the legacy `</charcolor>`). By default, complete blocks are styled while the rest streams. SillyTavern rebuilds the display during streaming, which can cause styling to flash. Enable **Apply styling after generation finishes (prevents flashing)** to delay styling of the generating message until generation ends or is stopped. Complete blocks are then styled; unfinished blocks remain undecorated.
 
 ## Compatibility and troubleshooting
 
 - Use non-nested thought tags. Ordinary unnamed italics and code examples are left alone.
 - Regexes or extensions that replace thought tags or rewrite dialogue can prevent matching.
 - After an update, refresh SillyTavern. If the display was affected by 1.8.0, reloading the chat lets SillyTavern render the original saved messages again.
-- Disable **Colour charcolor dialogue** to remove dialogue colours and hover swapping. The message’s text and other markup remain in place.
+- Disable **Colour character dialogue (<c>)** to remove dialogue colours and hover swapping. The message’s text and other markup remain in place, and the name/colour headers become visible again.
 - HivePack uses SillyTavern’s authenticated image APIs for uploads, listing, and deletion.
 
 ## Development and validation

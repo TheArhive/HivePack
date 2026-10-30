@@ -1,6 +1,5 @@
-HivePack 1.8.1
+HivePack 1.9.0
 JavaScript module syntax check: passed.
 DOM regression suite: passed.
-The dialogue decorator no longer assigns message innerHTML or formats whole messages. It uses a transient (-1) formatter call only to read an isolated dialogue body as visible text, then wraps matching existing text nodes.
-Regression checks verify surrounding details/font/italic/third-party nodes retain identity, strong markup and event listeners survive, disabling unwraps only HivePack spans, unmatchable dialogue leaves the DOM unchanged, and stable displays do not repeatedly format. Colour priorities, hover swaps, original message preservation, and existing extension regressions pass.
-The formatter and image APIs are mocked. Full live SillyTavern/browser visual testing has not been performed.
+New checks cover the c dialogue template, reversible hidden speaker/HEX headers across inline markup, multiple speakers, legacy dialogue support, master-off cleanup and node preservation, generation deferral and completion/stop, sampling methods with synthetic saturated/background/transparent pixels, per-method caches, and pipette coordinate mapping plus immediate override save. Existing formatting, collapse, override, photo management and dialogue regressions pass.
+Formatter, canvas, and image APIs are mocked. Full live SillyTavern/browser visual testing has not been performed.
