@@ -67,12 +67,43 @@ function refresh() {
     });
 }
 
-// Reformat from original source through SillyTavern's sanitizer. Never write chat/prompt text.
+// Decorate existing text nodes only. Never rebuild a message or write chat text.
 const dialogueRender=new WeakMap(),dialogueHover=new WeakMap();
 function dialoguePriority(s){const allowed=['override','photo','model'];return [...new Set([...(Array.isArray(s.dialoguePriority)?s.dialoguePriority:[]).filter(x=>allowed.includes(x)),...allowed])];}
-function dialogueMarkup(source){
-    const escape=value=>value.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return source.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)/g).map((part,index)=>index%2?part:part.replace(/<charcolor\s*=\s*(#[0-9a-f]{6})\s*\|\s*([^<>\n]+?)\s*>([\s\S]*?)<\/charcolor\s*>/gi,(_,hex,name,body)=>`<span class="hp-dialogue" data-hp-speaker="${escape(name.trim())}" data-hp-explicit-colour="${hex}">${body}</span>`)).join('');
+function dialogueBlocks(source){
+    return source.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)/g).flatMap((part,index)=>index%2?[]:[...part.matchAll(/<charcolor\s*=\s*(#[0-9a-f]{6})\s*\|\s*([^<>\n]+?)\s*>([\s\S]*?)<\/charcolor\s*>/gi)].map(match=>({hex:match[1],name:match[2].trim(),body:match[3]})));
+}
+function unwrapDialogue(holder){holder.querySelectorAll('.hp-dialogue').forEach(span=>span.replaceWith(...Array.from(span.childNodes)));}
+function decorateDialogue(holder,source,s){
+    const blocks=s.dialogueColours?dialogueBlocks(source):[],signature=JSON.stringify(blocks);
+    const previous=dialogueRender.get(holder),visible=holder.textContent;
+    if(previous?.signature===signature && previous.text===visible && previous.count===holder.querySelectorAll('.hp-dialogue').length)return;
+    unwrapDialogue(holder);
+    if(!s.dialogueColours){dialogueRender.set(holder,{signature,text:visible,count:0});return;}
+    let cursor=0;
+    blocks.forEach((block,index)=>{
+        const existing=holder.querySelector(`[data-hp-dialogue-index="${index}"]`);if(existing)return;
+        // Formatting an isolated body gives us its visible text, not HTML to insert into chat.
+        // Use transient ID -1 so SillyTavern cannot write first-message substitutions to chat.
+        const probe=document.createElement('div');
+        if(typeof context().messageFormatting!=='function')return;
+        probe.innerHTML=context().messageFormatting(block.body,context().name2,false,false,-1);
+        const needle=probe.textContent.replace(/\s+/g,' ').trim();if(!needle)return;
+        const walker=document.createTreeWalker(holder,NodeFilter.SHOW_TEXT),nodes=[];let text='';
+        while(walker.nextNode()){const node=walker.currentNode;if(node.parentElement?.closest('pre,code,.hp-dialogue'))continue;nodes.push({node,start:text.length,end:text.length+node.data.length});text+=node.data;}
+        // Normalize whitespace while retaining offsets into the existing DOM text.
+        let normalized='',offsets=[];
+        for(let i=0;i<text.length;i++){const char=/\s/.test(text[i])?' ':text[i];if(char===' '&&normalized.endsWith(' '))continue;normalized+=char;offsets.push(i);}
+        const at=normalized.indexOf(needle,cursor);if(at<0)return;
+        const start=offsets[at],end=offsets[at+needle.length-1]+1;
+        for(const item of nodes){const left=Math.max(start,item.start)-item.start,right=Math.min(end,item.end)-item.start;if(right<=left)continue;
+            const span=document.createElement('span');span.className='hp-dialogue';span.dataset.hpSpeaker=block.name;span.dataset.hpExplicitColour=block.hex;span.dataset.hpDialogueIndex=String(index);span.textContent=item.node.data.slice(left,right);
+            const parts=[];if(left)parts.push(document.createTextNode(item.node.data.slice(0,left)));parts.push(span);if(right<item.node.data.length)parts.push(document.createTextNode(item.node.data.slice(right)));item.node.replaceWith(...parts);
+        }
+        // Newly decorated nodes are excluded on the next search; continue with the remaining text.
+        cursor=at;
+    });
+    dialogueRender.set(holder,{signature,text:holder.textContent,count:holder.querySelectorAll('.hp-dialogue').length});
 }
 function refreshDialogue(s){
     const hoverToggle=document.querySelector('[data-rpp="dialoguePortraitHover"]');
@@ -80,12 +111,8 @@ function refreshDialogue(s){
     document.querySelectorAll('#chat > .mes[is_user="false"]:not([is_system="true"])').forEach(mes=>{
         const holder=mes.querySelector('.mes_text'),id=Number(mes.getAttribute('mesid')),message=context().chat?.[id];if(!holder||!message)return;
         const source=message.mes;if(typeof source!=='string')return;
-        const prior=dialogueRender.get(holder),hasTags=/<charcolor\s*=/i.test(source);
-        if((hasTags||prior) && typeof context().messageFormatting==='function'){
-            const transformed=s.dialogueColours?dialogueMarkup(source):source;
-            const needs=prior?.source!==source || prior?.enabled!==s.dialogueColours || (s.dialogueColours && transformed!==source && !holder.querySelector('.hp-dialogue'));
-            if(needs){holder.innerHTML=context().messageFormatting(transformed,message.name||context().name2,false,false,id);dialogueRender.set(holder,{source,enabled:s.dialogueColours});dialogueHover.delete(mes);}
-        }
+        decorateDialogue(holder,source,s);
+        if(!s.dialogueColours)dialogueHover.delete(mes);
         holder.querySelectorAll('.hp-dialogue').forEach(span=>{
             if(span.closest('code,pre'))return;
             const values={override:findOverride(span.dataset.hpSpeaker,s)?.colour,model:span.dataset.hpExplicitColour};
@@ -93,7 +120,7 @@ function refreshDialogue(s){
             if(!s.dialogueColours)span.style.removeProperty('--hp-dialogue-colour');
             if(!span.hpHoverBound){span.hpHoverBound=true;
                 span.addEventListener('mouseenter',()=>{const current=settings();if(current.dialogueColours&&current.dialoguePortraitHover&&current.enabled&&resolvePortrait(span.dataset.hpSpeaker,current)){dialogueHover.set(mes,span);schedule();}});
-                span.addEventListener('mouseleave',()=>{if(dialogueHover.get(mes)===span){dialogueHover.delete(mes);schedule();}});
+                span.addEventListener('mouseleave',event=>{const next=event.relatedTarget?.closest?.('.hp-dialogue');if(next && next.closest('.mes')===mes && next.dataset.hpSpeaker===span.dataset.hpSpeaker){dialogueHover.set(mes,next);return;}if(dialogueHover.get(mes)===span){dialogueHover.delete(mes);schedule();}});
             }
         });
     });

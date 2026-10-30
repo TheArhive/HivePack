@@ -1,71 +1,119 @@
 # HivePack
 
-A SillyTavern extension for styled character thoughts and portrait-enhanced messages.
+**Version 1.8.1** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
-Current version: **1.6.0**.
+HivePack changes the chat display. It does not rewrite saved messages, prompts, or injections. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
-## Installation
+## Install and update
 
-1. Open SillyTavern's **Extensions** panel and select **Install extension** / **Install from URL**.
-2. Paste the Git clone URL of the GitHub repository hosting this README and install it.
-3. Reload SillyTavern, then open **Extensions → HivePack**.
+1. Open **Extensions → Install extension** in SillyTavern.
+2. Paste `https://github.com/TheArhive/HivePack` and install.
+3. Refresh the page and open **Extensions → HivePack**.
 
-Use SillyTavern's extension manager to update the extension from its repository. If you previously used a display regex to replace thought tags with HTML, disable that regex so HivePack receives the original `<i>` tags. Saved message text is not rewritten by HivePack.
+Update through SillyTavern’s extension manager, then refresh. Disable any old regex that replaces thought tags with HTML so HivePack can read the original `<i>` thoughts.
 
-## Author's Note / model instructions
+The right-side persona portrait requires [Moonlit Echoes Theme](https://github.com/RivelleDays/SillyTavern-MoonlitEchoesTheme) with **Ripple style** selected. Thought cards, their portraits, and dialogue colours work with other themes.
 
-This is the instruction used in the Author's Note to make the model output thoughts in HivePack's format:
+[Megumin Suite](https://github.com/Arif-salah/Megumin-Suite-Beta) is used in the original setup for coloured dialogue, but is **optional**. Your preset can handle dialogue colours, or you can use HivePack’s `<charcolor>` feature below.
+
+## Model instructions / Author’s Note
+
+### Inner thoughts
+
+Add this instruction to your Author’s Note:
 
 ```text
 Interweave character's inner monologue (this can be any character present in the scene, including {{user}}) through the response between <i></i> while featuring the characters name
 Eg: <i>Tomy | #Hex: I can't believe I have to explain this again.</i>
 ```
 
-`#Hex` in that example is a placeholder. Ask the model to use a real six-digit hexadecimal colour, preferably the same colour it uses for that character's dialogue:
+`#Hex` is a placeholder for a real six-digit colour. For example:
 
 ```html
 <i>Tomy | #9BD4A8: I can't believe I have to explain this again.</i>
 ```
 
-The exact shape is **Name | #RRGGBB: Thought** inside `<i></i>`. Use the same character names consistently, or add aliases in HivePack. Thoughts can belong to anyone in the scene, including the current persona. Ordinary `<i>Name: Thought</i>` tags also work: HivePack uses a remembered colour if available, otherwise its blue-gray fallback.
+Thoughts can belong to any character in the scene, including your persona. `<i>Name: Thought</i>` also works, using an override, a remembered colour, or the default styling when no HEX is supplied. Use consistent speaker names or configure aliases.
 
-## Theme and dialogue colours
+### Coloured dialogue
 
-The **side persona portrait beside full messages** requires [Moonlit Echoes Theme](https://github.com/RivelleDays/SillyTavern-MoonlitEchoesTheme) with **Ripple style** selected. Thought bubbles and their smaller portraits work in other themes too.
+Enable **Colour charcolor dialogue**, then add this instruction:
 
-This setup uses [Megumin Suite](https://github.com/Arif-salah/Megumin-Suite-Beta) for colour-coded dialogue. **Megumin Suite is optional.** Your preset can handle dialogue colours instead. HivePack reads the colour in each thought's header; it does not require another extension or infer a speaker from coloured dialogue.
+```text
+Assign a distinct, readable hex color to every characters dialogue using: <charcolor=#HEXCODE | Character Name>"Dialogue here"</charcolor>. Once assigned, a character's color is LOCKED for the entire story. Wrap ALL dialogue with these blocks.
+Eg: <charcolor=#35BD5A| Diane>"Can you believe this?"</charcolor>
+```
 
-## Features
+Both `<charcolor=#35BD5A|Diane>` and `<charcolor=#35BD5A | Diane>` are accepted. A closing `</charcolor>` is required. HEX codes must have six digits.
 
-### Thought styling and colour memory
+HivePack colours matching dialogue already rendered by SillyTavern, retaining its surrounding markup and formatting. It does not rebuild the message. If another extension rewrites the dialogue so it cannot be matched, HivePack leaves that passage alone. Code examples and user/system messages are excluded.
 
-Name labels, borders, background tint, and hover accents use the selected colour source. Ordinary body text keeps a readable blue-gray colour. Bold text (`**text**`) starts with a darker shade of the bubble colour; double-quoted text uses a lighter shade. Shades are adjusted when needed for contrast. Straight and curly double quotes are supported, including quotes spanning existing inline markup. Missing or invalid colours fall back to the last valid colour learned for that character in the current chat, or the default style if no colour is known.
+## Main settings
 
-Colour memory is saved in chat metadata and shared by aliases of the same character. Colour precedence is configurable under **Appearance → Colour priority**. Choose the order of:
+| Setting | What it does |
+| --- | --- |
+| Style inner monologues | Turns recognised thoughts into styled cards. |
+| Hover highlight and enlargement | Highlights and enlarges thought cards on hover. |
+| Show thought portraits | Shows a portrait or a clickable fallback beside thoughts. |
+| Sample average portrait colour | Makes portrait colours available for thought styling. |
+| Remember colours in this chat | Learns valid thought-header colours in the current chat. |
+| Click speaker labels to collapse thoughts | Enables individual and per-message collapse controls. |
+| Start new thought cards collapsed | Sets the initial state of newly displayed thoughts. |
+| Collapse earlier messages after a new AI response | Collapses older thoughts after a new response finishes. |
+| Show persona beside full messages (Ripple only) | Adds your persona portrait to the right of AI messages. |
+| Colour charcolor dialogue | Enables dialogue colouring. On by default. |
+| Show dialogue speaker portrait on hover (Ripple only) | Temporarily replaces the right-side persona portrait with the dialogue speaker. Off by default. |
 
-1. Custom override colour.
-2. Average portrait colour.
-3. Model hex code.
-4. Remembered colour.
+The dialogue hover option is greyed out unless **Show persona beside full messages** is enabled. It requires Ripple style. Moving away restores the persona portrait; missing or failed speaker images leave or restore the persona.
 
-The first available source wins. Drag sources into priority order, or use the up/down buttons. **Sample average portrait colour** must be enabled for the photo source; **Remember colours in this chat** must be enabled for memory. Missing or failed image samples fall through to the next source. Defaults preserve model colours unless a custom override is enabled or portrait sampling is turned on.
+## Colours and appearance
 
-Photo sampling uses a 32×32 rendering of the entire portrait, weighted by transparency. Fully transparent pixels are ignored. Results are cached for the session. Sampling does not send the image to an external service.
+Open the collapsible **Appearance** menu. Its live preview shows the active character’s portrait and demonstrates ordinary, bold, and quoted thought text.
 
-### Portraits and aliases
+### Colour priority
 
-Portrait matching checks:
+Each list uses the first available source. Drag entries to reorder them, or use their up/down buttons.
 
-1. A speaker or alias-target override.
-2. The current persona when the name matches `{{user}}`.
-3. The active chat character when the name matches `{{char}}`.
-4. No portrait if there is no match.
+| List | Sources | Default order |
+| --- | --- | --- |
+| Thought colour priority | Override, Photo average, Model HEX, Remembered colour | Override → Photo average → Model HEX → Remembered colour |
+| Dialogue colour priority | Override, Photo average, HEX in message | Override → HEX in message → Photo average |
 
-Matching ignores case and repeated spaces but otherwise requires the full name. Persona wins when the persona and active character have the same name, unless you set an override.
+Thought photo sampling requires **Sample average portrait colour**; remembered thought colours require **Remember colours in this chat**. Dialogue photo sampling is independent of the thought sampling toggle. Missing images, pending samples, and failed samples fall through to the next source.
 
-Automatic name matching against other character cards has been removed because it was unreliable. **You can still explicitly choose any loaded character card as a portrait override**, including duplicate-name cards distinguished by their filenames. Custom uploaded portraits are also supported.
+Photo sampling averages the entire image using a 32×32 rendering, weighted by transparency, and caches the result for the session. No external image service is used. Dialogue uses the selected colour directly. Thought labels, borders, and backgrounds use it as a tint; bold thought text uses a darker shade and double-quoted text a lighter shade, adjusted for contrast.
 
-Aliases use one mapping per line:
+### Layout controls
+
+| Control | Choices or range |
+| --- | --- |
+| Maximum thought width | 200–1200 px, constrained to the message area |
+| Thought font size | 60–150% |
+| Background opacity | 0–60% |
+| Thought portrait width | 35–180 px, constrained on narrow screens |
+| Hover enlargement | 0–20% |
+| Corner radius | 0–30 px |
+| Thought alignment | Left, centered, right, or full message width |
+| Portrait crop | Match bubble height, original proportions, 1:1, 2:3, or 3:2 |
+| Missing portrait appearance | Vertical photo-picker strip, speaker initials, or silhouette |
+| Full-message persona width, desktop/mobile | 0 uses Ripple defaults; 40–400 px sets a custom width |
+
+Right-aligned thoughts enlarge toward the top left. Full-width thoughts occupy 82% of the message text area and enlarge from the centre, leaving space for the maximum hover enlargement. Reduced-motion preferences disable scaling and animation. Hover enlargement can overlap nearby text without moving the layout.
+
+## Speakers, aliases, and portraits
+
+HivePack chooses a speaker portrait in this order:
+
+1. An applicable speaker override, including aliases.
+2. Your current persona if its name matches the speaker.
+3. The selected chat character if its name matches the speaker.
+4. A clickable missing-portrait fallback.
+
+Names ignore case and repeated spaces. If your persona and selected character share a name, the persona wins unless an override is set. Other library cards must be selected explicitly as overrides; automatic name lookup across the whole library is not supported.
+
+### Aliases
+
+Enter one mapping per line:
 
 ```text
 Appy = Apothos
@@ -73,118 +121,72 @@ Corazón = Apothos
 Professor Bine = Ilya
 ```
 
-Aliases affect portraits and remembered colours. Labels retain the name written by the model. Alias chains are supported; cycles are safely ignored. Aliases are global preferences. Each speaker override can be **G (Global)** or **L (Local)**, scoped to the **Current character**. Character scope is keyed by the selected card's avatar filename, so it applies across that character's chats. A matching character-scoped override takes precedence over a global override. Renaming the card file may require recreating scoped overrides.
+HivePack treats an alias as the same speaker, sharing portrait overrides, colour overrides, and remembered colours. Labels retain the name written by the model. Aliases are global; chains are supported and cycles are ignored.
 
-The scope button is disabled when no character is selected and its current state is Global. A previously scoped override can still be switched back to Global. Overrides for other characters remain stored and reappear when those characters are selected. Selecting a colour enables its override. A Disable colour override button appears beside enabled pickers. The main editor stages changes until Add / replace override; saved override cards and the portrait viewer save colour changes immediately. A colour-only override can leave portrait selection set to Automatic.
-
-### Custom photos and saved-photo management
+### Create or edit an override
 
 Under **Speaker portrait and colour overrides**:
 
-1. Enter the exact speaker name (or alias).
-2. Choose a character card, a saved photo, or a custom upload.
-3. Optionally select a custom colour to enable it, and choose G (Global) or L (Local) scope.
-4. Click **Add / replace override** to save the assignment.
+1. Enter the speaker name or alias.
+2. Select a character card, the current persona, a saved photo, or a custom upload. Leave **Automatic** selected for a colour-only override.
+3. Optionally pick a custom colour and choose the scope.
+4. Click **Add / replace override**. A popup editor closes after a successful save.
 
-The compact **Choose custom photo** button opens the file selector. The selected photo appears in a preview. Choosing a new file uploads it to the server; it does not change a speaker's saved assignment until you click Add / replace override. If you close the editor without saving, the uploaded file remains available in saved photos.
+The character-card selector includes a preview beside it. Native dropdown menus do not reliably support image thumbnails across browsers.
 
-**Browse saved photos** opens a closable popup displaying **up to 25 photos per page**. Use Previous/Next to change pages. Click a thumbnail to see a larger preview, then choose **Back** or **Select photo**. Selecting a photo stages it in the editor; click Add / replace override to commit it.
-
-PNG, JPEG, WebP, and GIF files up to 10 MB are accepted. Images are stored in the HivePack image folder on your SillyTavern server. Settings store server-relative paths so the same photos remain available on reload and when using the same server from another device.
-
-**Remove** on an override removes only the assignment. **Delete photo** in the saved-photo browser permanently deletes that uploaded file after confirmation. Referencing portrait assignments are cleared across global and character scopes; any custom colour on those assignments is preserved as a colour-only override. Deletion is limited to the HivePack image folder. Failed uploads/deletions preserve existing assignments. Back up settings and uploaded image files if moving servers.
-
-### Expanded portrait viewer
-
-Click a thought's portrait to open a larger view. Keyboard users can focus the portrait and press Enter or Space. Close the viewer with its Close button, Escape, or a click on the backdrop. Character-card thumbnails use the original card image when opening the viewer.
-
-The viewer's top-left controls open **Character card**, **Saved photos**, or **Upload photo** override editors for that thought's speaker. These editors also include the speaker's custom colour and scope controls.
-
-Thoughts without a portrait have a compact clickable fallback. Choose **speaker initials**, a **silhouette**, or a **photo-picker area** in Appearance. Clicking it opens the compact override editor. Turning off thought portraits also hides these fallback controls.
-
-### Collapsible thoughts
-
-Click the top speaker label, or focus it and press Enter/Space, to collapse or expand a thought. There is no collapse-arrow decoration. Each message also has a **Collapse thoughts / Expand thoughts** button immediately below its token-count element. Mixed states collapse all on the next bulk click.
-
-- **Start new thought cards collapsed** controls the initial state of newly decorated thoughts. Existing choices are kept; reload the chat/page to apply the default to all thoughts.
-- **Collapse earlier messages after a new AI response** collapses thoughts in earlier messages after a changed AI response finishes generating. The latest response follows the default setting. Quiet/background generations, dry runs, and unchanged replies do not trigger it.
-- Disabling collapsible thoughts expands all cards and hides their collapse controls.
-
-Collapse choices are local to the current chat session and reset on chat switches or page reload. Identical thoughts with the same message ID share collapse state. If token-count text is hidden, the bulk button remains below its element. A theme that hides the entire avatar/info column also hides that button.
-
-### Appearance
-
-Appearance controls are inside a closed-by-default **Appearance** submenu:
-
-| Setting | Range |
+| Scope button | Meaning |
 | --- | --- |
-| Maximum thought width | 200–1200 px, constrained to message width |
-| Thought font size | 60–150% |
-| Background opacity | 0–60% |
-| Thought portrait width | 35–180 px, constrained on narrow screens |
-| Hover enlargement | 0–20% |
-| Corner radius | 0–30 px |
-| Full-message persona width, desktop/mobile | 0 uses Ripple defaults; 40–400 px overrides |
+| **G**, light blue | Global across characters and chats. |
+| **L**, orange | Local to the selected character, across that character’s chats. |
 
-Choose **Left**, **Centered**, **Right**, or **Full message width** alignment. Full width stretches through the message text area, excluding the surrounding message portrait columns.
+Hover over G/L for details. Local overrides take precedence over global ones. Local scope is tied to the character card’s avatar filename, so renaming it may require recreating the override. Switching from G to L is disabled when no character is selected. Other characters’ local overrides remain saved but are hidden until selected.
 
-The **Live styling preview** updates while changing settings, using the active character's name/portrait when available. It demonstrates normal, bold, and quoted text. It stays expanded so appearance changes remain visible even when real thoughts default to collapsed.
+Selecting a colour automatically enables it. **Disable colour override** appears beside enabled pickers and removes only the custom colour. The main editor stages changes until **Add / replace override**; colour changes on saved override cards and in the expanded portrait viewer save immediately.
 
-Hover applies to fine pointers. Reduced-motion preferences disable scaling and animation. Larger hover settings may overlap nearby text without changing the layout.
+Open **Existing speaker overrides** to browse compact cards with portrait thumbnails, colour controls, G/L, Edit, and Remove. Remove deletes the assignment, not its uploaded photo.
 
-### Streaming
+## Portrait viewer and saved photos
 
-HivePack waits for an explicit closing `</i>` in the source message before decorating a thought. Completed thoughts can render while the rest of a reply is still streaming. An unfinished thought remains plain, including when generation stops before its closing tag arrives.
+Click a thought portrait to open a larger view, scaled down to fit the browser without enlarging small images. Use Close, Escape, or the backdrop to dismiss it. Portraits and missing-portrait controls also support Enter/Space.
 
-## Compatibility and limitations
+The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
 
-- Uses standard SillyTavern message markup and the current extension context APIs.
-- Other extensions or regexes that restructure message HTML or replace thought tags may interfere.
-- Use non-nested `<i>...</i>` thought tags. Markdown emphasis inside thoughts is supported.
-- User/system messages, code examples, and unnamed italics are not decorated.
-- Thought portraits crop to the bubble height with a Ripple-inspired fade.
-- HivePack does not edit model prompts, injections, or saved message content. Colour memory is stored separately in chat metadata.
-- Upload, list, and delete operations use SillyTavern's authenticated local image APIs.
+Click the fallback beside a thought without an image to open the compact override editor. Its selection and colour controls are centred, with a green-check save button at the bottom.
 
-## Uninstall
+### Upload and reuse photos
 
-Remove HivePack through SillyTavern's extension manager and reload. Global settings, chat colour metadata, and uploaded photos may remain. Delete unwanted photos through the saved-photo browser before uninstalling.
+**Choose custom photo** accepts PNG, JPEG, WebP, and GIF files up to 10 MB. Uploading stores the image immediately on your SillyTavern server, but you still need **Add / replace override** to assign it. Closing without saving leaves the upload available for reuse.
 
-## Validation
+**Browse saved photos** shows up to 25 images per page. Click a thumbnail to preview it. Back is at the top left, Close at the top right, and **✓ Select photo** beneath the title stages your choice. Save the override to apply it.
 
-Syntax, manifest, and DOM behavior have automated checks. Image API calls are tested with mocks against the inspected API contract. Full-browser layout checks and testing against a live SillyTavern instance remain outstanding. To run the development checks, install dev dependencies with `npm install` and run `npm test`; no build step is needed for installation. See [VALIDATION.txt](VALIDATION.txt).
+**Delete photo** permanently deletes an uploaded image after confirmation. Its portrait assignments are cleared across scopes, retaining any custom colours. Failed uploads or deletions keep existing assignments. Photos use server-relative paths and remain available when accessing the same server from another device. Back up settings and uploaded images when moving servers.
 
-## License
+## Collapse controls and streaming
 
-MIT. Original companion code. No Moonlit Echoes or Megumin Suite source is bundled.
+Click a thought’s top speaker label to collapse or expand it. Each message also has **Collapse thoughts / Expand thoughts** below its token count. If some thoughts are open and others closed, the next bulk click collapses them all.
 
-### New in 1.7.0
+Collapse choices last for the chat session and reset on chat switches or page reload. Changing the initial collapsed setting affects new cards; reload to apply it throughout the chat. Identical thoughts in the same message share collapse state. Themes that hide the entire avatar/info column also hide the bulk button.
 
-Compact G/L scope buttons show blue for global and orange for character-local overrides. Hover for details. Colour pickers are square, and the initial settings use two columns. The portrait-source selector has an explanation and a small preview of the selected card. Native select menus do not reliably support image thumbnails across browsers.
+Automatic collapse of older messages runs after a changed AI response finishes. Quiet/background generations, dry runs, and unchanged replies do not trigger it. The latest response follows the initial collapsed setting.
 
-Empty portraits use a vertical photo strip on the right. Portrait dialogs offer replacement controls once, with explanatory text. The viewer’s top-right **Style colour** picker saves immediately to the speaker’s effective override, preserving its portrait and scope; a new override defaults to global. To make that colour take precedence, keep Custom override first in colour priority. New speaker entries retain colour selections when committing the name field.
+Thoughts wait for a closing `</i>`, and dialogue waits for `</charcolor>`. Complete blocks can be styled while the rest of a response streams. Unfinished blocks remain undecorated.
 
-Saved-photo previews place Back at the top left, Close at the top right, the title centered, and a Select photo button with a green check beneath it. Open portraits fit the window without enlarging small originals.
+## Compatibility and troubleshooting
 
-Right-aligned bubbles enlarge toward the top left. Full-width bubbles use 82% of the available width and enlarge from the center, leaving room for the maximum 20% hover enlargement. **Portrait crop** offers bubble-height, original proportions, 1:1, 2:3, and 3:2 layouts.
+- Use non-nested thought tags. Ordinary unnamed italics and code examples are left alone.
+- Regexes or extensions that replace thought tags or rewrite dialogue can prevent matching.
+- After an update, refresh SillyTavern. If the display was affected by 1.8.0, reloading the chat lets SillyTavern render the original saved messages again.
+- Disable **Colour charcolor dialogue** to remove dialogue colours and hover swapping. The message’s text and other markup remain in place.
+- HivePack uses SillyTavern’s authenticated image APIs for uploads, listing, and deletion.
 
-### New in 1.7.1
+## Development and validation
 
-Portrait previews stay hidden until a valid image is selected and disappear if loading fails. Popup override editors have centered selection and colour controls, plus a centered save button with a green check. A successful save closes the popup; validation errors keep it open.
+No build step is required. Install development dependencies with `npm install`, then run `npm test`. Check module syntax with `node --input-type=module --check < index.js`.
 
-Existing overrides appear in a collapsed **Existing speaker overrides** section with compact cards and portrait thumbnails. Choose any colour to enable an override and use **Disable colour override** to remove its colour while retaining the portrait and scope. The portrait viewer offers the same disable action beside its immediate colour picker. Aliases share the canonical speaker’s portrait overrides, colour overrides, and remembered colours.
+DOM regression tests cover formatting, colour sources, collapse controls, streaming, overrides, photo management, and dialogue interactions. Image APIs are mocked. Live SillyTavern and full-browser visual testing remain outstanding. See [VALIDATION.txt](VALIDATION.txt).
 
-### Dialogue colouring (1.8.0)
+## Uninstall and licence
 
-Enable **Colour charcolor dialogue** to display dialogue wrapped in `<charcolor=#RRGGBB|Name>…</charcolor>`. Six hexadecimal digits are required, and whitespace around the separator is allowed. Formatting inside the dialogue is retained. Only complete blocks in AI messages are processed, excluding code examples. Stored messages and outgoing prompt text are unchanged.
+Remove HivePack through the extension manager and refresh. Settings, chat colour metadata, and uploaded photos may remain; delete unwanted photos through the photo browser before uninstalling.
 
-Add this instruction to your author’s note:
-
-```text
-Assign a distinct, readable hex color to every characters dialogue using: <charcolor=#HEXCODE | Character Name>"Dialogue here"</charcolor>. Once assigned, a character's color is LOCKED for the entire story. Wrap ALL dialogue with these blocks.
-Eg: <charcolor=#35BD5A| Diane>"Can you believe this?"</charcolor>
-```
-
-**Appearance → Dialogue colour priority** has its own draggable order: Override, Photo average, and HEX in message. The default is Override → HEX in message → Photo average. The first available source wins. Photo average uses the speaker’s resolved portrait and falls through while sampling or if sampling fails. This is independent of the thought portrait-sampling checkbox. Overrides and aliases use the same global/current-character rules as thoughts.
-
-Enable **Show dialogue speaker portrait on hover (Ripple only)** to temporarily replace the right-side persona portrait while pointing at that speaker’s dialogue. Leaving the dialogue restores the persona. A speaker without an associated image does not change it; failed image loads restore the persona. This option is disabled and greyed out unless **Show persona beside full messages (Ripple only)** is enabled, and the portrait swap requires Moonlit Echoes’ Ripple style. Hover swapping is off by default.
+MIT. No Moonlit Echoes or Megumin Suite source is bundled.
