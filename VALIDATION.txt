@@ -1,6 +1,6 @@
-HivePack 1.15.0
+HivePack 1.16.0
 JavaScript module syntax check: passed.
 DOM regression suite: passed.
-New coverage checks immediate visible On/Off text during focused power-button clicks; viewport-fixed default launcher coordinates and horizontal/vertical clamping; Current/All speaker tabs with 25/25/3 pagination for 53 speakers; remembered speakers across chat changes; manager cleanup; and the None missing-portrait mode without placeholder or extra portrait column. Existing extension regressions pass.
-Saved custom launcher positions are retained; Reset uses the new viewport anchor. All Speakers learns from opened chats plus configured overrides/aliases, without scanning unopened chat files.
-APIs and geometry are mocked. Live SillyTavern/full-browser visual testing remains outstanding.
+Visual redesign uses honey-orange, beeswax, and warm charcoal across settings, popup menus, navigation, sliders, speaker/photo cards, final actions, and the floating launcher. Includes local honeycomb and bee SVG assets. Actual speaker colours remain unchanged; green power state and red Close indicators are retained. Only fallback silhouettes receive a warm presentation filter.
+New vector assets pass SVG XML parsing. Static colour checks exceed WCAG AA 4.5:1 for body text (14.91), muted text (7.76), selected navigation (7.76), and the final action (8.37). Existing DOM interaction regressions pass.
+Full browser/live SillyTavern visual testing remains outstanding.

@@ -1,13 +1,13 @@
 {
   "display_name": "HivePack",
-  "description": "Character-coloured collapsible thoughts, portrait viewer, reusable uploaded photos, aliases, and Ripple persona portraits.",
+  "description": "Honey-themed settings, character-coloured thoughts and dialogue, reusable portraits, aliases, and Ripple persona portraits.",
   "loading_order": 50,
   "requires": [],
   "optional": [],
   "js": "index.js",
   "css": "style.css",
   "author": "OpenAI",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "license": "MIT",
   "auto_update": true
 }

@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.15.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.16.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -18,9 +18,9 @@ The right-side persona portrait requires [Moonlit Echoes Theme](https://github.c
 
 ## Settings panel and floating button
 
-The dark gray and purple panel opens from the **hive button** or **magic wand menu → HivePack Settings**. HivePack no longer adds settings to SillyTavern’s Extensions drawer. Preferences save automatically; portrait-override drafts are applied when **Add / replace override** is clicked.
+The honey-and-beeswax panel opens from the **hive button** or **magic wand menu → HivePack Settings**. HivePack no longer adds settings to SillyTavern’s Extensions drawer. A subtle honeycomb texture, amber navigation, beeswax highlights, and a small bee illustration give the interface its hive identity. Controls sit on opaque dark surfaces for readability; the texture is removed automatically for higher-contrast system preferences. Preferences save automatically; portrait-override drafts are applied when **Add / replace override** is clicked.
 
-The rounded square hive button has a light purple gradient and starts beside the text input, 200 pixels left of its composer anchor. It is positioned in viewport coordinates, outside the composer’s clipping containers, and clamped horizontally and vertically to stay on screen. Saved custom positions are retained; use Reset floating button position to apply the new default. Dragging follows the pointer directly without animated position changes. Hovering adds a subtle enlargement and highlight, without slowing dragging. Drag it to a floating position; its location is remembered and kept inside the window when resized. Keyboard users can move the focused button with **Alt + arrow keys**. **General → Reset floating button position** restores the viewport-anchored default beside the input again.
+The rounded square hive button has a cream-centred honey-orange gradient and starts beside the text input, 200 pixels left of its composer anchor. It is positioned in viewport coordinates, outside the composer’s clipping containers, and clamped horizontally and vertically to stay on screen. Saved custom positions are retained; use Reset floating button position to apply the new default. Dragging follows the pointer directly without animated position changes. Hovering adds a subtle enlargement and highlight, without slowing dragging. Drag it to a floating position; its location is remembered and kept inside the window when resized. Keyboard users can move the focused button with **Alt + arrow keys**. **General → Reset floating button position** restores the viewport-anchored default beside the input again.
 
 | Tab | Contents |
 | --- | --- |
@@ -210,7 +210,7 @@ Open **Existing speaker overrides** to browse compact cards with portrait thumbn
 
 Click a thought portrait to open a larger view, scaled down to fit the browser without enlarging small images. Use Close, Escape, or the backdrop to dismiss it. Portraits and missing-portrait controls also support Enter/Space.
 
-The speaker’s name sits at the top left, above the portrait-selection buttons. **Close** is centred below the image. All HivePack popup menus share the panel’s dark purple theme, Close buttons have red outlines, and Add / replace override has a light purple background. Thought portraits use a clicking-hand cursor. The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The supplied SVG **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
+The speaker’s name sits at the top left, above the portrait-selection buttons. **Close** is centred below the image. All HivePack popup menus share the panel’s warm charcoal, honey-orange, and beeswax theme, Close buttons have red outlines, and Add / replace override has a prominent honey-gold background. Thought portraits use a clicking-hand cursor. The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The supplied SVG **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
 
 Click the fallback beside a thought without an image to open the compact override editor. With **Missing portrait appearance → None (plain bubble)**, no placeholder or extra portrait column is appended; use the speaker tabs to assign a portrait instead. Its selection and colour controls are centred, with a green-check save button at the bottom.
 
@@ -250,4 +250,4 @@ DOM regression tests cover formatting, colour sources, collapse controls, stream
 
 Remove HivePack through the extension manager and refresh. Settings, chat colour metadata, and uploaded photos may remain; delete unwanted photos through the photo browser before uninstalling.
 
-Code: MIT. No Moonlit Echoes or Megumin Suite source is bundled. The pipette, hive, upload, and power SVGs (SVG Repo) and silhouette PNG were supplied for HivePack and are bundled locally in `assets/`.
+Code: MIT. No Moonlit Echoes or Megumin Suite source is bundled. The original honeycomb tile and bee illustration are bundled as lightweight SVG artwork. The pipette, hive, upload, and power SVGs (SVG Repo) and silhouette PNG were supplied for HivePack and are bundled locally in `assets/`.
