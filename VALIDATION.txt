@@ -1,5 +1,5 @@
-HivePack 1.18.0
+HivePack 1.19.0
 JavaScript module syntax check: passed.
-DOM regression suite: passed, including thought-feature dependency states, removal of both bubble images and placeholders when portraits are disabled, independent dialogue/thought injection combinations, custom legacy prompt migration, reset, depth/append modes, and master-off prompt cleanup.
-General controls now use labelled native checkbox inputs with switch roles and custom honeycomb tracks. Parent-off states preserve saved preferences. Large master control also has a honeycomb track.
-CSS braces balance. Full browser/live SillyTavern visual testing remains outstanding.
+DOM regression suite covers direct colour removal preserving image and scope, Local-to-Global and Global-to-current-character switching, bound-character tooltips, unavailable Local scope without a character, collision protection, scoped deletion and existing pagination/formatting/injection behaviours.
+Card delete action is positioned at top right; Save alias aligns right. Scope and colour actions sit beside their respective labels.
+Full browser/live SillyTavern visual testing remains outstanding.

@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.18.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.19.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -188,7 +188,7 @@ HivePack treats an alias as the same speaker, sharing portrait overrides, colour
 
 ### Speaker manager and dialogue controls
 
-Open **Current Speakers** to see speakers detected in the current chat’s completed dialogue and thought blocks. Open **Overrides** to browse saved speaker assignments, including global and character-specific entries. Both views display at most 25 cards per page with Previous/Next controls. Each override card shows its portrait, custom colour and scope, with **Portrait & colour** and **Delete override** controls. Deleting an override keeps the uploaded photo in saved photos and leaves aliases and other character-specific assignments intact. Alias controls treat alternate names as the same speaker. Expand **Add speaker overrides & aliases** to create assignments manually. Navigation has wider labels and a different themed bee for every tab; selected tabs use bright beeswax text on a contrasting honey-brown background.
+Open **Current Speakers** to see speakers detected in the current chat’s completed dialogue and thought blocks. Open **Overrides** to browse saved speaker assignments, including global and character-specific entries. Both views display at most 25 cards per page with Previous/Next controls. Each override card shows its portrait, custom colour and scope, with **Portrait & colour** and **Delete override** controls. The delete button sits at the top right of each card; Save alias is right-aligned. Use the small **G/L** button beside the scope label to switch between global and the currently selected character. Hover **L** to see the bound character. Switching is disabled when no character is selected or an assignment already exists in the destination scope, preserving both entries. The red **×** beside a custom colour clears only that colour, keeping the portrait and scope. Deleting an override keeps the uploaded photo in saved photos and leaves aliases and other character-specific assignments intact. Alias controls treat alternate names as the same speaker. Expand **Add speaker overrides & aliases** to create assignments manually. Navigation has wider labels and a different themed bee for every tab; selected tabs use bright beeswax text on a contrasting honey-brown background.
 
 Click dialogue to open the same speaker controls used by thought portraits: a portrait viewer if the speaker has a photo, or the compact override editor if they do not. Dialogue is keyboard-focusable; Enter or Space opens its controls. Selecting text does not open an editor.
 

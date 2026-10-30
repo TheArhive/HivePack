@@ -581,3 +581,15 @@ input[type="color"]::-webkit-color-swatch { border:0;border-radius:1px; }
 .hp-power-switch.is-on .hp-switch-track::after { transform:translateX(21px);background:#b8f18e; }
 @media(max-width:760px) { .hp-general-group { grid-template-columns:1fr; } }
 @media(prefers-reduced-motion:reduce) { .hp-switch-track::after { transition:none; } }
+
+/* Inline override card actions. */
+.hp-speaker-card { position:relative; }
+.hp-speaker-card .hp-delete-override { position:absolute;right:10px;top:10px;max-width:calc(100% - 94px);white-space:normal;padding:3px 7px;font-size:.78em; }
+.hp-speaker-card .hp-save-card-alias { align-self:flex-end; }
+.hp-override-colour-line,.hp-override-scope-line { display:flex;align-items:center;gap:7px;flex-wrap:wrap; }
+.hp-override-colour-line > span { font-size:.85em;overflow-wrap:anywhere;min-width:0; }
+.hp-speaker-card .hp-clear-card-colour { padding:0 4px;min-width:20px;line-height:1.1;font-size:20px;background:transparent!important;border-color:transparent!important;color:#ff8d7d!important; }
+.hp-speaker-card .hp-clear-card-colour:hover { background:#672f25!important;border-color:#ff8d7d!important; }
+.hp-speaker-card .hp-scope-toggle[data-scope="global"] { color:#8dcfff!important; }
+.hp-speaker-card .hp-scope-toggle[data-scope="local"] { color:#f2a35e!important; }
+.hp-speaker-card .hp-scope-toggle:disabled { opacity:.45;cursor:default; }
