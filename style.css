@@ -561,3 +561,23 @@ input[type="color"]::-webkit-color-swatch { border:0;border-radius:1px; }
 .hp-delete-override { border-color:#c77b61!important;color:#ffe0d1!important; }
 @media(max-width:1100px) { .hp-modern-shell { grid-template-columns:228px minmax(240px,1fr);grid-template-rows:minmax(0,1fr) auto; } .hp-modern-preview { grid-column:1/-1;border-left:0;border-top:1px solid #79562b;max-height:300px; } }
 @media(max-width:600px) { .hp-modern-dialog .hp-modern-nav .menu_button { width:176px;flex:0 0 176px; } .hp-tab-bee { flex-basis:40px;width:40px;height:33px; } .hp-modern-preview { max-height:none; } }
+
+/* Honeycomb on/off switches keep native keyboard and label activation. */
+.hp-switch-label { position:relative;display:flex!important;align-items:center;gap:10px;cursor:pointer; }
+.hp-switch-label .hp-honey-switch { position:absolute!important;left:0;width:48px!important;height:28px!important;margin:0!important;opacity:0;cursor:pointer;z-index:1; }
+.hp-switch-track { position:relative;display:inline-block;flex:0 0 48px;width:48px;height:26px;border:1px solid #9c7b47;border-radius:7px;background:#40392d;box-sizing:border-box;pointer-events:none; }
+.hp-switch-track::after { content:'';position:absolute;left:3px;top:2px;width:20px;height:20px;background:#b7aa91;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);transition:transform .16s ease,background .16s ease; }
+.hp-honey-switch:checked + .hp-switch-track { background:#6f4717;border-color:#edba58; }
+.hp-honey-switch:checked + .hp-switch-track::after { transform:translateX(21px);background:#ffdb7c; }
+.hp-honey-switch:focus-visible + .hp-switch-track { outline:2px solid #ffe4a5;outline-offset:3px; }
+.hp-honey-switch:disabled { cursor:default; }
+.hp-control-disabled { opacity:.43;cursor:default; }
+.hp-checkbox-grid { display:flex;flex-direction:column;gap:14px; }
+.hp-general-group { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 18px;border:1px solid #73522a;border-radius:9px;padding:12px;min-width:0; }
+.hp-general-group legend { padding:0 7px;color:#ffdc8e;font-weight:600; }
+.hp-general-group .checkbox_label { margin:0;padding:6px;font-size:.92em;line-height:1.4; }
+.hp-power-switch .hp-switch-track { margin-left:auto; }
+.hp-power-switch.is-on .hp-switch-track { background:#3b5b2b;border-color:#9bd478; }
+.hp-power-switch.is-on .hp-switch-track::after { transform:translateX(21px);background:#b8f18e; }
+@media(max-width:760px) { .hp-general-group { grid-template-columns:1fr; } }
+@media(prefers-reduced-motion:reduce) { .hp-switch-track::after { transition:none; } }

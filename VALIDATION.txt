@@ -1,7 +1,5 @@
-HivePack 1.17.0
+HivePack 1.18.0
 JavaScript module syntax check: passed.
-DOM regression suite: passed, including independent Current Speakers and Overrides pagination (25 per page), inline scoped override deletion, and tab icon presence.
-Six themed bee tab SVG assets pass XML parsing. CSS braces balance.
-Selected tab beeswax text against the lightest point of the explicit background gradient has a 7.93:1 contrast ratio. Navigation is wider, labels wrap, and selected text colours explicitly override inherited theme colours.
-Removed duplicate Existing speaker overrides list; inline cards edit/delete individual name-and-scope assignments. Saved photo deletion is a separate operation.
-Full browser/live SillyTavern visual testing remains outstanding.
+DOM regression suite: passed, including thought-feature dependency states, removal of both bubble images and placeholders when portraits are disabled, independent dialogue/thought injection combinations, custom legacy prompt migration, reset, depth/append modes, and master-off prompt cleanup.
+General controls now use labelled native checkbox inputs with switch roles and custom honeycomb tracks. Parent-off states preserve saved preferences. Large master control also has a honeycomb track.
+CSS braces balance. Full browser/live SillyTavern visual testing remains outstanding.

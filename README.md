@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.17.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.18.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -39,12 +39,12 @@ Use the optional injection controls to send instructions automatically, or add t
 
 ### Automatic prompt injection
 
-Open the **Prompt** tab. Placement controls are visible directly; the prompt editor starts collapsed, and injection starts **off**.
+Open the **Prompt** tab. Placement controls are visible directly; the two prompt editors start collapsed, and both injection switches start **off**.
 
-1. Enable **Inject HivePack model instructions**.
+1. Enable **Inject dialogue instructions (<c>)**, **Inject thought instructions (<i>)**, or both. These are independent of display styling switches.
 2. Choose the placement mode.
 3. In separate mode, set **Injection depth**. The default is 4; 0 places it at the most recent end of the chat. Values from 0 to 10,000 are accepted.
-4. Expand **Edit model instructions** to customise the text. Edits are saved automatically. **Reset to default** restores the supplied `<ChatColor>` block containing the dialogue and thought instructions.
+4. Expand **Edit dialogue instructions** or **Edit thought instructions** to customise that section. Edits save automatically; each editor has its own **Reset to default**. Enabled, nonempty sections are combined inside a single `<ChatColor>` block.
 
 | Placement | Behaviour |
 | --- | --- |
@@ -53,7 +53,7 @@ Open the **Prompt** tab. Placement controls are visible directly; the prompt edi
 
 Append mode uses a separate runtime prompt entry beside Author’s Note; it does not edit the saved note or chat metadata. It follows the note’s active interval and sends nothing if the note is empty, disabled, or placed outside chat. Set Author’s Note to **In-chat** to use append mode; otherwise use the separate depth mode. An identical instruction block already present in the note is not appended twice.
 
-Injection preferences are global. Emptying the prompt, switching injection off, or switching **Enable HivePack** off removes HivePack’s runtime injections. Manual instructions remain untouched. Remove duplicate manual formatting instructions when enabling automatic injection. SillyTavern handles macros such as `{{user}}` in the injected text.
+Injection preferences are global. Emptying both active sections, switching both injection switches off, or switching **Enable HivePack** off removes HivePack’s runtime injections. Manual instructions remain untouched. Remove duplicate manual formatting instructions when enabling automatic injection. SillyTavern handles macros such as `{{user}}` in the injected text.
 
 ### Inner thoughts (manual)
 
@@ -92,18 +92,20 @@ The large **HivePack power switch** sits above the other General settings. It us
 | Setting | What it does |
 | --- | --- |
 | Apply styling after generation finishes (prevents flashing) | Defers thought cards, dialogue styling, and the side portrait for the generating message until generation ends or is stopped. Older messages stay styled. Off by default. |
-| Style inner monologues | Turns recognised thoughts into styled cards. |
+| Style thought bubbles (<i>) | Turns recognised thoughts into styled cards. |
 | Dim other text when hovering a speaker | Keeps the hovered speaker’s dialogue and thoughts clear while dimming narration and other speakers in that message. On by default. |
 | Hover highlight and enlargement | Highlights and enlarges thought cards on hover. |
-| Show thought portraits | Shows a portrait or a clickable fallback beside thoughts. |
+| Add images to thought bubbles | Shows a portrait or a clickable fallback beside thoughts. |
 | Sample portrait colour | Makes portrait colours available for thought styling. |
 | Remember colours in this chat | Learns valid thought-header colours in the current chat. |
 | Click speaker labels to collapse thoughts | Enables individual and per-message collapse controls. |
 | Start new thought cards collapsed | Sets the initial state of newly displayed thoughts. |
 | Collapse earlier messages after a new AI response | Collapses older thoughts after a new response finishes. |
 | Show persona beside full messages (Ripple only) | Adds your persona portrait to the right of AI messages. |
-| Colour character dialogue (<c>) | Enables dialogue colouring. On by default. |
+| Style character dialogue (<c>) | Enables dialogue colouring. On by default. |
 | Show hovered speaker portrait (dialogue and thoughts, Ripple only) | Temporarily replaces the right-side persona portrait when hovering dialogue or a thought bubble. Off by default. |
+
+General settings are grouped into **Thought bubbles**, **Dialogue & Ripple portraits**, and **Shared styling**. On/off controls use keyboard-accessible honeycomb switches: left is off, right is on. Bubble portraits, hover effects and collapse controls are greyed out when thought styling is off; initial/automatic collapse controls also require collapsible thoughts. Disabling portraits leaves a plain thought bubble without a photo or placeholder. Saved preferences remain intact when a parent feature is off. Existing combined prompt instructions migrate to the separate editors without losing custom text.
 
 The dialogue hover option is greyed out unless **Show persona beside full messages** is enabled. It requires Ripple style. The hovered speaker’s name appears below the right-side portrait, using the effective dialogue or thought colour. No name appears while idle. Leaving hides the name immediately; the image lingers for the configured delay before restoring the persona. Moving onto another speaker cancels the previous linger. A missing or failed portrait leaves or restores the persona without a misleading name label.
 
