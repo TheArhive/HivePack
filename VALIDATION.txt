@@ -1,6 +1,6 @@
-HivePack 1.13.0
+HivePack 1.14.0
 JavaScript module syntax check: passed.
 DOM regression suite: passed.
-New coverage verifies no Extensions drawer or speaker-manager wand entry; inline speaker detection/alias controls; automatically loaded inline photo pagination/preview; gallery cleanup; power-switch state and supplied assets; sole settings-panel preference persistence; direct pointer launcher positioning; and priority reordering that moves rows during drag, animates displaced rows, and commits only on release. Existing formatting, overrides, prompts, hover, collapse, photo and launcher regressions pass.
-CSS explicitly disables inherited launcher transitions/animation, reserves composer space, uses compact settings columns, widens preview, and styles final override actions.
-Formatter/image/prompt/canvas APIs, geometry and animation are mocked. Full browser/live SillyTavern visual testing remains outstanding.
+New checks verify ten bounded appearance sliders, live readouts, fade intensity updates at 80% and 0%, and a default launcher shift of 200px with viewport clamping. Existing panel, inline manager, priority sorting, prompt, portrait, hover, collapse and image-management regressions pass.
+CSS changes cover purple popup themes, red Close borders, light purple final actions, bright power-switch text, top-aligned portrait crops, pointer cursor, position-independent launcher hover feedback, and preview focus fading.
+Browser-dependent appearance remains unverified: geometry, APIs and animation are mocked in DOM tests. Live SillyTavern/full-browser visual testing remains outstanding.

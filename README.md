@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.13.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.14.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -20,7 +20,7 @@ The right-side persona portrait requires [Moonlit Echoes Theme](https://github.c
 
 The dark gray and purple panel opens from the **hive button** or **magic wand menu → HivePack Settings**. HivePack no longer adds settings to SillyTavern’s Extensions drawer. Preferences save automatically; portrait-override drafts are applied when **Add / replace override** is clicked.
 
-The rounded square hive button has a light purple gradient and starts beside the text input, inset to the left of the send controls with space reserved in the composer. Dragging follows the pointer directly without animated position changes. Drag it to a floating position; its location is remembered and kept inside the window when resized. Keyboard users can move the focused button with **Alt + arrow keys**. **General → Reset floating button position** docks it beside the input again.
+The rounded square hive button has a light purple gradient and starts beside the text input, shifted 200 pixels left from its composer anchor and kept within the window. Saved custom positions are retained; use Reset floating button position to apply the new default. Dragging follows the pointer directly without animated position changes. Hovering adds a subtle enlargement and highlight, without slowing dragging. Drag it to a floating position; its location is remembered and kept inside the window when resized. Keyboard users can move the focused button with **Alt + arrow keys**. **General → Reset floating button position** docks it beside the input again.
 
 | Tab | Contents |
 | --- | --- |
@@ -86,7 +86,7 @@ HivePack colours matching dialogue already rendered by SillyTavern, retaining it
 
 ## Main settings
 
-The large **HivePack power switch** sits above the other General settings. It is green when on and gray when off. Turning it off removes HivePack’s thought cards, dialogue colours and hidden headers, side portraits, and collapse controls. It also pauses colour learning and removes HivePack’s runtime prompt injection. Your preferences and overrides are retained.
+The large **HivePack power switch** sits above the other General settings. It uses bright green text when on and light gray text when off, against dark button backgrounds. Turning it off removes HivePack’s thought cards, dialogue colours and hidden headers, side portraits, and collapse controls. It also pauses colour learning and removes HivePack’s runtime prompt injection. Your preferences and overrides are retained.
 
 | Setting | What it does |
 | --- | --- |
@@ -133,6 +133,8 @@ Sampling uses a 32×32 rendering, ignores transparent pixels, and caches results
 
 ### Layout controls
 
+Bounded numeric Appearance controls are sliders with live numeric readouts. Keyboard arrow keys adjust a focused slider. The preview also demonstrates speaker-focus fading when you hover its dialogue or thoughts.
+
 | Control | Choices or range |
 | --- | --- |
 | Maximum thought width | 200–1200 px, constrained to the message area |
@@ -140,6 +142,7 @@ Sampling uses a 32×32 rendering, ignores transparent pixels, and caches results
 | Background opacity | 0–60% |
 | Thought portrait width | 35–180 px, constrained on narrow screens |
 | Hover enlargement | 0–20% |
+| Other-text fade intensity | 0–100%; 0 leaves other text unchanged, 100 fully fades it. Default 70%. Requires speaker-focus dimming to be enabled. |
 | Portrait linger after hover | 0–5000 ms; default 500 ms. Set 0 for immediate restoration. |
 | Corner radius | 0–30 px |
 | Thought alignment | Left, centered, right, or full message width |
@@ -147,7 +150,7 @@ Sampling uses a 32×32 rendering, ignores transparent pixels, and caches results
 | Missing portrait appearance | Vertical photo-picker strip, speaker initials, or the supplied silhouette image |
 | Full-message persona width, desktop/mobile | 0 uses Ripple defaults; 40–400 px sets a custom width |
 
-Right-aligned thoughts enlarge toward the top left. Full-width thoughts occupy 82% of the message text area and enlarge from the centre, leaving space for the maximum hover enlargement. Reduced-motion preferences disable scaling and animation. Hover enlargement can overlap nearby text without moving the layout.
+Portrait crops keep the image at the top right of the thought, including fixed aspect ratios and original proportions. Right-aligned thoughts enlarge toward the top left. Full-width thoughts occupy 82% of the message text area and enlarge from the centre, leaving space for the maximum hover enlargement. Reduced-motion preferences disable scaling and animation. Hover enlargement can overlap nearby text without moving the layout.
 
 ## Speakers, aliases, and portraits
 
@@ -206,7 +209,7 @@ Open **Existing speaker overrides** to browse compact cards with portrait thumbn
 
 Click a thought portrait to open a larger view, scaled down to fit the browser without enlarging small images. Use Close, Escape, or the backdrop to dismiss it. Portraits and missing-portrait controls also support Enter/Space.
 
-The speaker’s name sits at the top left, above the portrait-selection buttons. **Close** is centred below the image. The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The supplied SVG **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
+The speaker’s name sits at the top left, above the portrait-selection buttons. **Close** is centred below the image. All HivePack popup menus share the panel’s dark purple theme, Close buttons have red outlines, and Add / replace override has a light purple background. Thought portraits use a clicking-hand cursor. The viewer offers **Character card**, **Saved photos**, and **Upload photo** to replace that speaker’s portrait. Its top-right **Style colour** picker saves immediately, retaining the existing portrait and scope. New overrides default to Global. The supplied SVG **pipette button to the left of the colour picker** enters photo sampling mode. Click a point on the photo to save that pixel as the speaker’s custom colour, or click the pipette again to cancel. Sampling uses the original image coordinates even when the viewer scales it down. Transparent pixels are rejected without changing the override. The adjacent disable button removes that colour override. Keep Override first in colour priority if you want it to win.
 
 Click the fallback beside a thought without an image to open the compact override editor. Its selection and colour controls are centred, with a green-check save button at the bottom.
 
