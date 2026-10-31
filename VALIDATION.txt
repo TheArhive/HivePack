@@ -1,4 +1,4 @@
-HivePack 1.28.3
+HivePack 1.28.4
 JavaScript module syntax check: passed.
-DOM regression suite verifies direct tag-chip editing with no separate Edit/Delete text buttons, labelled red × deletion, rename/recolour preserving assignments, confirmed deletion retaining photos, colour grouping, filter disclosure and existing tag behaviours.
-Tag labels and delete controls remain separate native buttons, accessible by keyboard, with descriptive labels/tooltips. Deletion stops propagation and retains the existing confirmation. Live browser visual verification remains outstanding.
+DOM regressions cover gradient-first ordering in definitions and assigned-photo badges, horizontal 90-degree preset with a short 47–53% midpoint transition, and migration of the previous diagonal gradient/solid Pink/Blue definitions without losing IDs or photo assignments. Existing tag management, filtering, overlay icons and selector disclosure checks pass.
+The swatch, badge fill and colour heading all use the same horizontal transition. Live browser visual verification remains outstanding.

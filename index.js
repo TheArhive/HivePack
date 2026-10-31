@@ -1,7 +1,7 @@
 import { user_avatar, extension_prompt_types, extension_prompt_roles, MAX_INJECTION_DEPTH } from '../../../../script.js';
 
 const KEY = 'hivepack';
-const PHOTO_TAG_GRADIENT='linear-gradient(135deg, #64b5f6, #ef8db6)';
+const PHOTO_TAG_GRADIENT='linear-gradient(90deg, #64b5f6 47%, #ef8db6 53%)';
 const assetUrl=name=>new URL(`assets/${name}`,import.meta.url).href;
 const DEFAULT_INSTRUCTION = `<ChatColor>
 Assign a distinct, readable hex color to every characters dialogue using: <c>Name | #Hex: "Dialogue here"</c>. Once assigned, a character's color is LOCKED for the entire story. Wrap ALL dialogue with these blocks.
@@ -66,7 +66,7 @@ const initializedSettings=new WeakSet();
 function settings() {
     const c = context();
     c.extensionSettings[KEY] ??= { ...defaults, overrides: [], ...c.extensionSettings.ripple_persona_portrait };
-    const stored=c.extensionSettings[KEY];if(initializedSettings.has(stored))return stored;stored.photoTags??=[];for(const tag of stored.photoTags)if(['#64b5f6','#ef8db6'].includes(tag.colour))tag.colour=PHOTO_TAG_GRADIENT;stored.photoTagAssignments??={};stored.portraitFocus??={};stored.spotlightWidth??=Math.max(120,Math.min(1200,(Number(stored.spotlightRadius)||220)*2));stored.spotlightHeight??=Math.max(80,Math.min(400,Math.round((Number(stored.spotlightRadius)||220)*.75)));if(stored.promptDialogueEnabled===undefined){stored.promptDialogueEnabled=Boolean(stored.promptEnabled);stored.promptThoughtEnabled=Boolean(stored.promptEnabled);const legacy=String(stored.instructionPrompt||DEFAULT_INSTRUCTION),parts=legacy.replace(/^<ChatColor>\s*/,'').replace(/\s*<\/ChatColor>$/,'').split(/\n---\n/);stored.dialogueInstruction=parts[0];stored.thoughtInstruction=parts.slice(1).join('\n---\n');if(!stored.thoughtInstruction&&legacy!==DEFAULT_INSTRUCTION)stored.promptThoughtEnabled=false;}
+    const stored=c.extensionSettings[KEY];if(initializedSettings.has(stored))return stored;stored.photoTags??=[];for(const tag of stored.photoTags)if(['#64b5f6','#ef8db6','linear-gradient(135deg, #64b5f6, #ef8db6)'].includes(tag.colour))tag.colour=PHOTO_TAG_GRADIENT;stored.photoTagAssignments??={};stored.portraitFocus??={};stored.spotlightWidth??=Math.max(120,Math.min(1200,(Number(stored.spotlightRadius)||220)*2));stored.spotlightHeight??=Math.max(80,Math.min(400,Math.round((Number(stored.spotlightRadius)||220)*.75)));if(stored.promptDialogueEnabled===undefined){stored.promptDialogueEnabled=Boolean(stored.promptEnabled);stored.promptThoughtEnabled=Boolean(stored.promptEnabled);const legacy=String(stored.instructionPrompt||DEFAULT_INSTRUCTION),parts=legacy.replace(/^<ChatColor>\s*/,'').replace(/\s*<\/ChatColor>$/,'').split(/\n---\n/);stored.dialogueInstruction=parts[0];stored.thoughtInstruction=parts.slice(1).join('\n---\n');if(!stored.thoughtInstruction&&legacy!==DEFAULT_INSTRUCTION)stored.promptThoughtEnabled=false;}
     for (const [key, value] of Object.entries(defaults)) c.extensionSettings[KEY][key] ??= Array.isArray(value) ? [...value] : value;
     initializedSettings.add(stored);return stored;
 }
@@ -852,7 +852,7 @@ function createPopup(title,className='hp-picker-dialog'){
     header.append(label,closeButton);dialog.append(header,content);document.body.append(dialog);
     if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');closeButton.focus();return {dialog,content,close};
 }
-const PHOTO_TAG_COLOURS=[['Red','#e57373'],['Orange','#ffb74d'],['Amber','#ffd54f'],['Lime','#c5d86d'],['Green','#81c784'],['Teal','#4db6ac'],['Cyan','#4dd0e1'],['Pink / Blue',PHOTO_TAG_GRADIENT],['Indigo','#9b9ee8'],['Purple','#ba8ce1'],['Brown','#bc957a'],['Grey','#b0bec5']];
+const PHOTO_TAG_COLOURS=[['Pink / Blue',PHOTO_TAG_GRADIENT],['Red','#e57373'],['Orange','#ffb74d'],['Amber','#ffd54f'],['Lime','#c5d86d'],['Green','#81c784'],['Teal','#4db6ac'],['Cyan','#4dd0e1'],['Indigo','#9b9ee8'],['Purple','#ba8ce1'],['Brown','#bc957a'],['Grey','#b0bec5']];
 const photoTagViews=new Set();
 function sortedPhotoTags(tags=settings().photoTags){return [...tags].sort((a,b)=>PHOTO_TAG_COLOURS.findIndex(row=>row[1]===a.colour)-PHOTO_TAG_COLOURS.findIndex(row=>row[1]===b.colour)||a.name.localeCompare(b.name));}
 function photoTagKey(image){const key=focalKey(image);return key.startsWith('/user/images/HivePack/')?key:'';}
