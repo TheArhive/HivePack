@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.26.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.27.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -286,6 +286,14 @@ Thoughts wait for a closing `</i>`, and dialogue waits for `</c>` (or the legacy
 - After an update, refresh SillyTavern. If the display was affected by 1.8.0, reloading the chat lets SillyTavern render the original saved messages again.
 - Disable **Colour character dialogue (<c>)** to remove dialogue colours and hover swapping. The message’s text and other markup remain in place, and the name/colour headers become visible again.
 - HivePack uses SillyTavern’s authenticated image APIs for uploads, listing, and deletion.
+
+## Performance
+
+Hovering updates only the affected message instead of reformatting the whole chat. Highlight wrappers are reused, unchanged message parsing and alias data are cached, and highlighting’s own DOM moves do not trigger full refreshes. Message edits and settings changes still invalidate the relevant state. Caches tied to messages use weak references so closed chats can be collected.
+
+The reading box coalesces pointer events to the next display frame without a trailing animation. Automatic reader promotion shortlists nearby messages with IntersectionObserver when available, with a geometry-filtered fallback. Repeated geometry styles and unchanged priority lists are not rebuilt.
+
+An 80-message synthetic DOM test with 24 hover transitions dropped from 24 full refreshes and 5,760 dialogue parses to **zero** of either. Representative elapsed time fell from about 681 ms to 40–50 ms, including the test harness waits. These figures are not live-browser FPS measurements; theme effects and rendering costs still need real SillyTavern profiling. Set the `HIVEPACK_BENCHMARK` environment variable to `1` when running the test suite to repeat the benchmark and its no-rescan assertions.
 
 ## Development and validation
 
