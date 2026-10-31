@@ -1,6 +1,6 @@
 {
   "name": "sillytavern-hivepack",
-  "version": "1.28.1",
+  "version": "1.28.2",
   "private": true,
   "description": "HivePack development checks. No build required for SillyTavern.",
   "license": "MIT",

@@ -1,5 +1,5 @@
-HivePack 1.28.1
+HivePack 1.28.2
 JavaScript module syntax check: passed.
-Full DOM regression suite: passed. New coverage checks twelve explicit opaque palette fills, the supplied SVG icon path and accessible overlay button, no nested preview/tag buttons, assignment opening from the overlay, enlarged-preview icon placement, and preservation of the parent preview when the tag editor closes.
-Palette fills are inline-important with background-image, opacity and filter reset to resist theme button overrides. Selected palette outlines remain visible. Tag actions are 25px corner overlays, mostly transparent at rest and visible on image hover/keyboard focus; touch layouts retain visibility and reduced-motion removes the fade.
-The supplied tag.svg passes XML parsing. Tag CRUD/search/pagination and source-preservation regressions pass. CSS braces balance. Live SillyTavern visual verification remains outstanding.
+Full DOM regression suite: passed. New coverage verifies nonempty per-colour management rows with same-colour alphabetical grouping; twelve palette options including the Pink/Blue gradient and replacement Brown; gradient swatch fill; migration of existing Pink/Blue tags while preserving IDs/assignments; wrapping-aware filter disclosure in Photos and saved-photo selection; More/Fewer expansion; selected-hidden counts; and resize to a single row hiding the disclosure.
+The shared selector measures actual tag rows after rendering, hides overflow chips accessibly, preserves selection/filter state, and cleans up its width observer/resize fallback when closed. No pointer/hover path changes. Existing tag CRUD, assignment, search, preview, deletion-preservation and image-overlay checks pass.
+Optional hover benchmark retains zero full-chat refreshes/parses. CSS braces balance. Full browser/live SillyTavern visual verification remains outstanding.

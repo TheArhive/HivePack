@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.28.1** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.28.2** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -271,13 +271,14 @@ The **Photos** tab loads the saved-photo gallery directly, with up to 25 images 
 
 ### Photo tags and tag search
 
-In **Photos**, click **Manage tags** to create a tag with a name and one of twelve preset colours. Names are unique regardless of case and can be up to 60 characters. Existing tags can be renamed, recoloured, or deleted. The palette order is **Red, Orange, Amber, Lime, Green, Teal, Cyan, Blue, Indigo, Purple, Pink, Grey**. Every tag list and photo’s badges follow that colour order, then alphabetical order within each colour.
+In **Photos**, click **Manage tags** to create a tag with a name and one of twelve preset colours. Names are unique regardless of case and can be up to 60 characters. Existing tags can be renamed, recoloured, or deleted. The palette order is **Red, Orange, Amber, Lime, Green, Teal, Cyan, Pink/Blue gradient, Indigo, Purple, Brown, Grey**. Every tag list and photo’s badges follow that colour order, then alphabetical order within each colour. The tag-creation/management window groups existing tags into one row per colour and omits empty colours. Existing solid Pink and Blue tags migrate to the combined gradient without changing tag IDs or photo assignments.
 
 Click the small **tag icon** at the bottom right of a photo or its enlarged preview to apply or remove tags. The icon is mostly transparent until hovered or keyboard-focused; it stays visible on touch devices. Changes save immediately. Tags are reusable across photos and are stored with HivePack settings; image files themselves are unchanged.
 
 Both **Photos** and **Browse saved photos** have the same search controls:
 
 - Type part of a tag name in **Search photos by tag**. Search ignores case and matches any assigned tag with that text.
+- Only the first row of filter tags is initially visible. **More tags** expands additional rows, and **Fewer tags** collapses them again. The control only appears when tags actually wrap; it updates when the selector is resized and indicates selected tags hidden below the first row.
 - Select coloured tag chips to require all selected tags. Text search can be combined with the chips.
 - Use **Clear filters** to return to the complete gallery. Filtering happens before pagination, retaining 25 photos per page. Preview/Back preserves the current search and page.
 
