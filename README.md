@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.22.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.23.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -121,13 +121,15 @@ The dialogue hover option is greyed out unless **Show persona beside full messag
 
 ### Cursor readability spotlight
 
-Open **General → Readability spotlight**. Enable **Increase chat opacity around the cursor** to add a theme-coloured surface behind chat content. It is strongest at the centre, fades smoothly toward the edges, and follows the pointer with a short movement transition. The background image itself and text opacity are unchanged.
+Open **General → Readability spotlight**. Enable **Increase chat opacity around the cursor** to add a theme-coloured surface behind chat content. The wide rounded reading box tracks the pointer immediately, without a movement transition. Its broad centre has uniform opacity, with a soft fade along the edges. The background image itself and text opacity are unchanged.
 
-- **Spotlight radius:** 60–600 pixels; default 220.
-- **Spotlight intensity:** 0–100%; default 65%.
+- **Reading area width:** 120–1,200 pixels; default 440.
+- **Reading area height:** 80–400 pixels; default 165.
+- **Centre opacity:** 0–100%; default 65%. At 100%, the centre surface is fully opaque.
+- **Extra darkening:** 0–75%; default 25%. Darkens the theme-derived surface colour to improve contrast independently of opacity.
 - **Subtle golden honeycomb pattern:** optional, off by default, and faded within the same radius.
 
-The dependent controls are greyed out while the spotlight is disabled. It is clipped to the chat window, ignores clicks and text selection, hides when the pointer leaves chat or the window loses focus, and is removed when HivePack is off. Pointer devices only; reduced-motion preferences disable the movement transition. This feature works independently of dialogue and thought styling and does not require Ripple.
+The dependent controls are greyed out while the spotlight is disabled. It is clipped to the chat window, ignores clicks and text selection, hides when the pointer leaves chat or the window loses focus, and is removed when HivePack is off. Pointer devices only; reduced-motion preferences disable the appearance fade. Existing circular-radius preferences migrate to the corresponding width and a shorter reading height. This feature works independently of dialogue and thought styling and does not require Ripple.
 
 ## Colours and appearance
 

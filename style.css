@@ -627,7 +627,7 @@ input[type="color"]::-webkit-color-swatch { border:0;border-radius:1px; }
 /* Readability lives between the chat surface and its content. */
 #chat.hp-spotlight-enabled { isolation:isolate; }
 .hp-spotlight-layer { position:fixed;z-index:-1;pointer-events:none!important;overflow:hidden;transition:opacity .12s ease; }
-.hp-spotlight-circle { position:absolute;left:0;top:0;border-radius:50%;pointer-events:none!important;will-change:transform;transition:transform .08s linear,opacity .12s ease;mask-image:radial-gradient(circle,black 0%,rgba(0,0,0,.85) 30%,rgba(0,0,0,.4) 65%,transparent 100%);-webkit-mask-image:radial-gradient(circle,black 0%,rgba(0,0,0,.85) 30%,rgba(0,0,0,.4) 65%,transparent 100%); }
+.hp-spotlight-circle { position:absolute;left:0;top:0;border-radius:32px;pointer-events:none!important;will-change:transform;transition:opacity .12s ease;mask-image:linear-gradient(to right,transparent,black 28px,black calc(100% - 28px),transparent),linear-gradient(to bottom,transparent,black 28px,black calc(100% - 28px),transparent);mask-composite:intersect;-webkit-mask-image:linear-gradient(to right,transparent,black 28px,black calc(100% - 28px),transparent),linear-gradient(to bottom,transparent,black 28px,black calc(100% - 28px),transparent);-webkit-mask-composite:source-in; }
 .hp-spotlight-circle.hp-spotlight-honeycomb { background-image:url('assets/honeycomb.svg');background-repeat:repeat; }
 .hp-spotlight-slider { display:grid;grid-template-columns:1fr auto;gap:7px; }
 .hp-spotlight-slider input { grid-column:1/-1;width:100%;accent-color:#edba58; }

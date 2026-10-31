@@ -1,6 +1,5 @@
-HivePack 1.22.0
+HivePack 1.23.0
 JavaScript module syntax check: passed.
-DOM regression suite: passed. New tests cover quoted dialogue segments inside an overwrapped c block, intervening narration and existing bold/emphasis node preservation, following speakers, idempotent rerender, source-message preservation, and reversible toggling.
-Spotlight regression coverage verifies a dedicated General settings group, dependent control states, theme-layer insertion and chat bounds, pointer positioning, radius/intensity updates, optional honeycomb, touch/no-chat hiding and master-off removal. The layer is aria-hidden and pointer-events:none; its masked colour surface is below chat content inside an isolated stacking context. No background-image or text opacity is changed.
-Existing formatting, focal points, priority, scope, injection, streaming and pagination checks pass. CSS braces balance.
-Full browser/live SillyTavern visual testing remains outstanding, including theme-specific stacking and spotlight movement.
+DOM regression suite verifies independently adjustable rectangular width/height, immediate pointer coordinate updates, full centre opacity at 100%, theme-surface darkening and zero-darkening restore. Existing narration-safe dialogue, focal-point, pagination, scope and injection checks remain covered.
+The reading box uses intersecting horizontal/vertical feather masks with a broad opaque centre and rounded corners. Position has no CSS transition; only appearance opacity fades. Pattern follows the same box mask. Legacy radius settings migrate to width and shorter height.
+Full browser/live SillyTavern visual testing remains outstanding, including theme stacking and final perceived contrast.
