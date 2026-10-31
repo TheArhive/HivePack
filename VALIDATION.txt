@@ -1,5 +1,4 @@
-HivePack 1.28.2
+HivePack 1.28.3
 JavaScript module syntax check: passed.
-Full DOM regression suite: passed. New coverage verifies nonempty per-colour management rows with same-colour alphabetical grouping; twelve palette options including the Pink/Blue gradient and replacement Brown; gradient swatch fill; migration of existing Pink/Blue tags while preserving IDs/assignments; wrapping-aware filter disclosure in Photos and saved-photo selection; More/Fewer expansion; selected-hidden counts; and resize to a single row hiding the disclosure.
-The shared selector measures actual tag rows after rendering, hides overflow chips accessibly, preserves selection/filter state, and cleans up its width observer/resize fallback when closed. No pointer/hover path changes. Existing tag CRUD, assignment, search, preview, deletion-preservation and image-overlay checks pass.
-Optional hover benchmark retains zero full-chat refreshes/parses. CSS braces balance. Full browser/live SillyTavern visual verification remains outstanding.
+DOM regression suite verifies direct tag-chip editing with no separate Edit/Delete text buttons, labelled red × deletion, rename/recolour preserving assignments, confirmed deletion retaining photos, colour grouping, filter disclosure and existing tag behaviours.
+Tag labels and delete controls remain separate native buttons, accessible by keyboard, with descriptive labels/tooltips. Deletion stops propagation and retains the existing confirmation. Live browser visual verification remains outstanding.

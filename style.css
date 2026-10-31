@@ -703,3 +703,8 @@ button.hp-photo-tag[aria-pressed="true"]::before { content:'';width:7px;height:7
 :is(.hp-modern-dialog,.hp-picker-dialog) .hp-more-photo-tags { margin:7px 0 0;padding:3px 8px;font-size:.8em; }
 .hp-more-photo-tags[hidden] { display:none!important; }
 @media(max-width:600px) { .hp-tag-colour-row { grid-template-columns:1fr;gap:4px; } }
+
+.hp-tag-colour-items .hp-tag-definition { padding:0;border:0;gap:3px; }
+.hp-picker-dialog .hp-tag-definition .hp-delete-tag { display:inline-flex;align-items:center;justify-content:center;width:22px;height:24px;min-width:0;margin:0;padding:0;border:1px solid transparent;background:transparent;color:#ff8d7d;font-size:19px;line-height:1; }
+.hp-picker-dialog .hp-tag-definition .hp-delete-tag:hover { background:#672f25;border-color:#ff8d7d; }
+.hp-tag-definition .hp-delete-tag:focus-visible { outline:2px solid #ff8d7d;outline-offset:1px; }
