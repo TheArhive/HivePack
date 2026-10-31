@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.24.1** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.25.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -117,12 +117,14 @@ The large **HivePack power switch** sits above the other General settings. It us
 
 General settings are grouped into **Thought bubbles**, **Dialogue & Ripple portraits**, and **Shared styling**. On/off controls use keyboard-accessible honeycomb switches: left is off, right is on. Bubble portraits, hover effects and collapse controls are greyed out when thought styling is off; initial/automatic collapse controls also require collapsible thoughts. Disabling portraits leaves a plain thought bubble without a photo or placeholder. Saved preferences remain intact when a parent feature is off. Existing combined prompt instructions migrate to the separate editors without losing custom text.
 
-The dialogue hover option is greyed out unless **Show persona beside full messages** is enabled. It requires Ripple style. The hovered speaker’s name appears below the right-side portrait, using the effective dialogue or thought colour. No name appears while idle. Leaving hides the name immediately; the image lingers for the configured delay before restoring the persona. Moving onto another speaker cancels the previous linger. A missing or failed portrait leaves or restores the persona without a misleading name label.
+The dialogue hover option is greyed out unless **Show persona beside full messages** is enabled. It requires Ripple style. The hovered speaker’s name appears below the right-side portrait, using the effective dialogue or thought colour. No name appears while idle. Without a message speaker stack, leaving hides the name immediately and restores the persona after the configured linger. With a message speaker stack enabled, content hovers promote a portrait persistently as described below. Moving onto another speaker cancels the previous linger. A missing or failed portrait leaves or restores the persona without a misleading name label.
 
 ### Cursor readability spotlight
 
 Open **General → Readability spotlight**. Enable **Increase chat opacity around the cursor** to add a theme-coloured surface behind chat content. The wide rounded reading box tracks the pointer immediately, without a movement transition. Its broad centre has uniform opacity, with a soft fade along the edges. The background image itself and text opacity are unchanged.
 
+- **Span the full chat width:** makes the box a horizontal reading strip across the chat; manual width is disabled while active.
+- **Promote speaker under reading line:** optional automatic portrait promotion in full-width mode. Requires message speaker portraits and hovered speaker portraits. Chooses the visible dialogue/thought closest to the strip’s centre, respecting the vertical offset. Ignores the right-side portrait column.
 - **Reading area width:** 120–1,200 pixels; default 440.
 - **Reading area height:** 80–400 pixels; default 165.
 - **Centre opacity:** 0–100%; default 65%. At 100%, the centre surface is fully opaque.
@@ -134,9 +136,9 @@ The dependent controls are greyed out while the spotlight is disabled. It is cli
 
 ### Message speaker portrait stack
 
-Enable **General → Dialogue & Ripple portraits → Show message speakers below persona (Ripple only)**. It requires **Show persona beside full messages** and starts off. Each AI message gets a vertical stack of available speaker portraits below the right-side persona image. Speakers are detected from completed dialogue and named thought wrappers, ordered by first appearance; aliases share one entry. Speakers without an assigned portrait are omitted.
+Enable **General → Dialogue & Ripple portraits → Show message speakers below persona (Ripple only)**. It requires **Show persona beside full messages** and starts off. Each AI message gets a vertical stack of available speaker portraits below the right-side persona image. The persona is omitted initially because it is already at the top. Speakers are detected from completed dialogue and named thought wrappers, ordered by first appearance; aliases share one entry. Speakers without an assigned portrait are omitted.
 
-Each portrait starts at 75% of the persona portrait’s width and height. Crowded stacks shrink proportionally to fit the message/visible chat area, and resize with the window. Portrait focal points are respected. Hover or keyboard-focus a portrait to use the existing speaker highlighting behaviour, controlled by **Dim other text when hovering a speaker**. Existing hover portrait swapping also applies if enabled. Click a portrait to open that speaker’s portrait/colour controls. No highlight is applied if that speaker has no styled dialogue or thought visible.
+Each portrait starts at 75% of the persona portrait’s width and height. Crowded stacks shrink proportionally to fit the message/visible chat area, and resize with the window. Portrait focal points are respected. Hover or keyboard-focus a portrait to use the existing speaker highlighting behaviour, controlled by **Dim other text when hovering a speaker**. With **Show hovered speaker portrait** also enabled, hovering a thought bubble or dialogue animates that speaker into the top position and moves the previous top portrait into the stack. That order remains after the pointer leaves, until another content speaker is hovered. Stack-image hovers only highlight text; they never promote a portrait. The top portrait is omitted from the queue, and the persona returns to the queue while another speaker occupies the top. **Appearance → Portrait shuffle duration** controls animation time from 0 to 1,500 ms (default 220); 0 or reduced-motion preferences makes changes instant. Promotion state resets when switching chats or disabling the relevant features. Click a portrait to open that speaker’s portrait/colour controls. No highlight is applied if that speaker has no styled dialogue or thought visible.
 
 ## Colours and appearance
 

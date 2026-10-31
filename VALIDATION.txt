@@ -1,5 +1,7 @@
-HivePack 1.24.1
+HivePack 1.25.0
 JavaScript module syntax check: passed.
-DOM regression suite covers an unclosed outer c wrapper followed by another opener and a closed later dialogue block: all three headers hidden, only quoted dialogue styled, intervening narration/bold nodes preserved, later blocks rendered independently, and saved source unchanged. Also checks idempotent rerenders, reversible toggles, orphan closing tags, different nested speakers, recovered speaker portraits and deferral until a close arrives.
-Dialogue parsing now tokenizes valid openers/closers and bounds malformed segments at the next opener without editing source text. Existing quote, streaming, portrait-stack, focal-point, reading-box, scope and injection checks remain covered.
-Full browser/live SillyTavern visual verification remains outstanding.
+DOM regression suite: passed. New coverage verifies persona exclusion, content-hover promotion and persona demotion, persistence on pointer exit, no promotion from stack hovers, return-to-persona promotion, configurable animation duration and instant mode, animation clone cleanup, full-width reading dimensions/manual-width dependency, and optional reading-line promotion including its disabled state and portrait-column exclusion.
+Animations use transient pointer-inert image clones moving between old/new viewport rectangles; rapid subsequent changes cancel prior clones, while reduced-motion or zero duration skips animation. Session-local per-message promotion preserves saved messages. Portrait stacks still deduplicate aliases and scale to fit.
+Full-width reading follows vertical offset and height; automatic promotion selects the visible thought/dialogue nearest its centre. Required settings are indicated and dependent controls grey out.
+Existing malformed-wrapper recovery, focal points, scope, streaming, injection and preservation regressions pass. CSS braces balance.
+Full browser/live SillyTavern visual testing remains outstanding, including final shuffle motion and theme-specific layout.
