@@ -1,6 +1,6 @@
-HivePack 1.20.0
+HivePack 1.21.0
 JavaScript module syntax check: passed.
-DOM regression suite: passed. Covers nine-card Current Speakers and Overrides pagination across 21 entries, 25-photo gallery pagination unchanged, direct current-speaker colour removal retaining portraits, shared card action rows, editable/browse subtab visibility, and folder-location popup. Existing formatting, colours, scope switching, aliases, injection and streaming checks pass.
-Colour-priority labels are unnumbered. Speaker refresh signatures include overrides so colour controls update even when a different colour source wins.
-SillyTavern's server image API and user directory template were inspected: photos live under the user's user/images folder; no file-manager launch action is provided by that API. Photo folder shows a copyable server path template and the default-installation example instead of pretending to open a native server folder.
-Full browser/live SillyTavern visual testing remains outstanding.
+DOM regression suite: passed. New coverage verifies click-to-place focal coordinates, slider edits, four crop previews, stable thumbnail/full-resolution/cache-busted image keys, live thought portrait updates across all crop modes, and reset to centre/top. Existing nine-speaker and 25-photo pagination, subtab visibility, scope/colour operations, prompt injection, streaming and preservation checks pass.
+Focal points save separately from image data, are reused per image, and update thought/side portraits and cropped thumbnails. Original proportions remain uncropped. Uploaded-photo deletion clears associated focal preferences.
+Overrides subtabs have equal 44px height, compact single-line labels and a connected active-tab/panel edge with responsive spacing.
+CSS braces balance. Full browser/live SillyTavern visual testing remains outstanding.

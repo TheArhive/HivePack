@@ -64,7 +64,7 @@ function context() { return SillyTavern.getContext(); }
 function settings() {
     const c = context();
     c.extensionSettings[KEY] ??= { ...defaults, overrides: [], ...c.extensionSettings.ripple_persona_portrait };
-    const stored=c.extensionSettings[KEY];if(stored.promptDialogueEnabled===undefined){stored.promptDialogueEnabled=Boolean(stored.promptEnabled);stored.promptThoughtEnabled=Boolean(stored.promptEnabled);const legacy=String(stored.instructionPrompt||DEFAULT_INSTRUCTION),parts=legacy.replace(/^<ChatColor>\s*/,'').replace(/\s*<\/ChatColor>$/,'').split(/\n---\n/);stored.dialogueInstruction=parts[0];stored.thoughtInstruction=parts.slice(1).join('\n---\n');if(!stored.thoughtInstruction&&legacy!==DEFAULT_INSTRUCTION)stored.promptThoughtEnabled=false;}
+    const stored=c.extensionSettings[KEY];stored.portraitFocus??={};if(stored.promptDialogueEnabled===undefined){stored.promptDialogueEnabled=Boolean(stored.promptEnabled);stored.promptThoughtEnabled=Boolean(stored.promptEnabled);const legacy=String(stored.instructionPrompt||DEFAULT_INSTRUCTION),parts=legacy.replace(/^<ChatColor>\s*/,'').replace(/\s*<\/ChatColor>$/,'').split(/\n---\n/);stored.dialogueInstruction=parts[0];stored.thoughtInstruction=parts.slice(1).join('\n---\n');if(!stored.thoughtInstruction&&legacy!==DEFAULT_INSTRUCTION)stored.promptThoughtEnabled=false;}
     for (const [key, value] of Object.entries(defaults)) c.extensionSettings[KEY][key] ??= Array.isArray(value) ? [...value] : value;
     return c.extensionSettings[KEY];
 }
@@ -128,7 +128,7 @@ function refresh() {
         const img = column.firstElementChild;
         const hovered=dialogueHover.get(mes),hold=portraitHolds.get(mes),swapping=s.dialoguePortraitHover&&s.enabled;
         const live=hovered?.isConnected?hovered:null;const source=swapping?(live?resolvePortrait(live.dataset.hpSpeaker,s):hold?.src):'';
-        const target=source||avatarUrl;if(img.getAttribute('src')!==target)img.setAttribute('src',target);
+        const target=source||avatarUrl;applyPortraitFocal(img,target);if(img.getAttribute('src')!==target)img.setAttribute('src',target);
         const caption=column.querySelector('.hp-side-speaker');caption.hidden=!live||!swapping||!source;
         if(live&&swapping){caption.textContent=live.dataset.hpSpeaker;caption.style.color=live.classList.contains('hp-monologue')?(resolveColour(live,s)||'#91a8c5'):(resolveDialogueColour(live.dataset.hpSpeaker,live.dataset.hpExplicitColour,s).colour||'#91a8c5');}
 
@@ -355,7 +355,7 @@ function updateThoughtPortrait(card, s) {
         portrait.append(img);
         card.append(portrait);
     }
-    const img = portrait.firstElementChild;
+    const img = portrait.firstElementChild;applyPortraitFocal(img,src);
     if (img.getAttribute('src') !== src) {
         portrait.hidden = false;
         card.classList.add('hp-has-portrait');
@@ -591,6 +591,15 @@ function fullPortraitSource(src) {
     }
     return safe;
 }
+function focalKey(src){const full=fullPortraitSource(src);return full?new URL(full).pathname:'';}
+function portraitFocal(src){const point=settings().portraitFocus[focalKey(src)];const clamp=(value,fallback)=>Number.isFinite(Number(value))?Math.max(0,Math.min(100,Number(value))):fallback;return {x:clamp(point?.x,50),y:clamp(point?.y,0)};}
+function applyPortraitFocal(img,src){const point=portraitFocal(src);img.style.objectPosition=`${point.x}% ${point.y}%`;}
+function savePortraitFocal(src,point){const key=focalKey(src);if(!key)return;settings().portraitFocus[key]={x:Math.max(0,Math.min(100,Number(point.x)||0)),y:Math.max(0,Math.min(100,Number(point.y)||0))};context().saveSettingsDebounced();refreshPortraitFocals();schedule();}
+function refreshPortraitFocals(){document.querySelectorAll('.hp-thought-portrait img,.rpp-image,.hp-editor-preview,.hp-card-preview,.hp-speaker-card > img,.hp-photo-tile img').forEach(img=>{if(img.getAttribute('src')&&!img.src.startsWith('blob:'))applyPortraitFocal(img,img.src);});}
+function openFocalEditor(src){const imagePath=fullPortraitSource(src);if(!imagePath)return;const popup=createPopup('Portrait focal point','hp-picker-dialog hp-focal-dialog');const help=document.createElement('p');help.textContent='Click the part of the portrait to keep in view, or adjust the sliders. Changes save immediately for this image and apply wherever it is reused. Original proportions show the whole image without cropping.';const stage=document.createElement('div');stage.className='hp-focal-stage';const image=document.createElement('img');image.src=imagePath;image.alt='Click to choose portrait focal point';image.draggable=false;const marker=document.createElement('span');marker.className='hp-focal-marker';marker.setAttribute('aria-hidden','true');stage.append(image,marker);const controls=document.createElement('div');controls.className='hp-focal-controls';let point=portraitFocal(src);const fields={};const previews=document.createElement('div');previews.className='hp-focal-previews';for(const [ratio,label] of [['1 / 1','Square'],['2 / 3','Portrait'],['3 / 2','Landscape'],['4 / 7','Tall bubble']]){const tile=document.createElement('div');const caption=document.createElement('small');caption.textContent=label;const crop=document.createElement('img');crop.src=imagePath;crop.alt=label+' crop preview';crop.style.aspectRatio=ratio;tile.append(crop,caption);previews.append(tile);}
+    const sync=()=>{marker.style.left=point.x+'%';marker.style.top=point.y+'%';for(const axis of ['x','y']){fields[axis].input.value=point[axis];fields[axis].output.textContent=Math.round(point[axis])+'%';}previews.querySelectorAll('img').forEach(img=>{img.style.objectPosition=`${point.x}% ${point.y}%`;});};
+    for(const [axis,title] of [['x','Horizontal focus'],['y','Vertical focus']]){const label=document.createElement('label');label.textContent=title;const input=document.createElement('input');input.type='range';input.min=0;input.max=100;input.step=1;input.setAttribute('aria-label',title);const output=document.createElement('output');fields[axis]={input,output};input.addEventListener('input',()=>{point[axis]=Number(input.value);sync();savePortraitFocal(src,point);});label.append(input,output);controls.append(label);}
+    image.addEventListener('click',event=>{const rect=image.getBoundingClientRect();if(!rect.width||!rect.height)return;point={x:Math.round(Math.max(0,Math.min(100,(event.clientX-rect.left)/rect.width*100))),y:Math.round(Math.max(0,Math.min(100,(event.clientY-rect.top)/rect.height*100)))};sync();savePortraitFocal(src,point);});const reset=action('Reset focal point',()=>{delete settings().portraitFocus[focalKey(src)];point=portraitFocal(src);sync();context().saveSettingsDebounced();refreshPortraitFocals();schedule();});const error=document.createElement('p');error.hidden=true;error.textContent='Could not load this portrait.';image.addEventListener('error',()=>{stage.hidden=true;error.hidden=false;});popup.content.append(help,stage,error,controls,reset,previews);sync();}
 let dismissPortraitViewer = null;
 function openPortraitViewer(src,title='Portrait') {
     const imagePath=fullPortraitSource(src);if(!imagePath)return;
@@ -601,6 +610,7 @@ function openPortraitViewer(src,title='Portrait') {
     for(const [mode,label] of [['card','Character card'],['saved','Saved photos'],['upload','Upload photo']]) {
         choices.append(action(label,()=>{view.close();openOverrideDialog(title,mode);}));
     }
+    choices.append(action('Focal point',()=>openFocalEditor(src)));
     const help=document.createElement('p');help.textContent='Choose a button to replace this speaker’s portrait. Use the colour picker to save a style colour immediately.';
     const quick=document.createElement('label');quick.className='hp-quick-colour';quick.textContent='Style colour ';
     const colour=document.createElement('input');colour.type='color';colour.setAttribute('aria-label','Set speaker style colour immediately');
@@ -638,6 +648,7 @@ async function deletePortraitPhoto(image) {
     if(!filename || /[\\/]/.test(filename) || filename==='.' || filename==='..')throw new Error('Invalid photo filename.');
     const response=await fetch('/api/images/delete',{method:'POST',headers:context().getRequestHeaders(),body:JSON.stringify({path:`user/images/HivePack/${filename}`})});
     if(!response.ok)throw new Error(`Could not delete photo (${response.status}). Existing overrides were kept.`);
+    delete settings().portraitFocus[focalKey(image)];
     settings().overrides=settings().overrides.flatMap(item=>{
         if(!item.image || safeImagePath(item.image)!==safe)return [item];
         if(item.colour)return [{...item,image:undefined,avatar:undefined}];
@@ -804,11 +815,11 @@ function mountPhotoManager(root,onSelect,popup=null){
         if(!photos.length){root.textContent='No saved photos yet. Upload a portrait to get started.';return;}
         page=Math.min(page,Math.max(0,Math.ceil(photos.length/size)-1));const grid=document.createElement('div');grid.className='hp-photo-gallery';
         for(const image of photos.slice(page*size,(page+1)*size)){
-            const tile=document.createElement('div');tile.className='hp-photo-tile';const thumb=document.createElement('img');thumb.src=image;thumb.alt='Saved portrait';thumb.loading='lazy';
+            const tile=document.createElement('div');tile.className='hp-photo-tile';const thumb=document.createElement('img');thumb.src=image;applyPortraitFocal(thumb,image);thumb.alt='Saved portrait';thumb.loading='lazy';
             const view=action('Preview',()=>{
                 root.replaceChildren();const large=document.createElement('img');large.src=image;large.alt='Selected portrait';large.className='hp-selected-photo';const back=action('Back',render);back.classList.add('hp-photo-back');
                 const choose=action('Select photo',()=>{onSelect(image);if(popup)popup.close();else render();});choose.classList.add('hp-select-photo');const check=document.createElement('span');check.textContent='✓ ';check.style.color='#74d78a';choose.prepend(check);
-                if(popup){popup.dialog.querySelector('.hp-popup-header').prepend(back);root.append(choose,large);}else{const tools=document.createElement('div');tools.className='hp-photo-inline-tools';tools.append(back,choose);root.append(tools,large);}
+                if(popup){popup.dialog.querySelector('.hp-popup-header').prepend(back);root.append(choose,action('Focal point',()=>openFocalEditor(image)),large);}else{const tools=document.createElement('div');tools.className='hp-photo-inline-tools';tools.append(back,choose,action('Focal point',()=>openFocalEditor(image))); root.append(tools,large);}
             });view.classList.add('hp-photo-view');view.replaceChildren(thumb);view.setAttribute('aria-label','Preview saved portrait');
             const errorLabel=document.createElement('small');errorLabel.setAttribute('role','status');const remove=action('Delete photo',async()=>{const uses=settings().overrides.filter(item=>item.image&&safeImagePath(item.image)===safeImagePath(image));if(!confirm(`Permanently delete this photo?${uses.length?' Its portrait assignments will be removed. Custom colours will be kept.':''}`))return;remove.disabled=true;
                 try{await deletePortraitPhoto(image);photos=photos.filter(x=>x!==image);photoColours.clear();schedule();render();refreshPhotoLibraries(library);}catch(error){remove.disabled=false;errorLabel.textContent=error.message;}
@@ -840,7 +851,7 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
         }
         if(Array.from(select.options).some(x=>x.value===selected))select.value=selected;
     }
-    function showPreview(src){const path=src?.startsWith('blob:')?src:safeImagePath(src);preview.hidden=!path;if(path)preview.src=path;else preview.removeAttribute('src');}
+    function showPreview(src){const path=src?.startsWith('blob:')?src:safeImagePath(src);preview.hidden=!path;focusButton.hidden=!path||path.startsWith('blob:');if(path){preview.src=path;if(!path.startsWith('blob:'))applyPortraitFocal(preview,path);}else preview.removeAttribute('src');}
     function load(){
         const existing=pinnedOverride??findOverride(name.value,settings());pinnedOverride=null;
         draft={...(existing??{}),scope:existing?.scope||''};
@@ -862,7 +873,7 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
         try{
             validatePhoto(photo);if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(photo);showPreview(previewUrl);
             picker.disabled=true;add.disabled=true;status.textContent='Uploading selected photo…';
-            draft.image=await uploadPortrait(photo);delete draft.avatar;fillOptions();select.value='@custom';status.textContent='Photo ready. Click Add / replace override to save.';
+            draft.image=await uploadPortrait(photo);delete draft.avatar;fillOptions();select.value='@custom';showPreview(draft.image);status.textContent='Photo ready. Click Add / replace override to save.';
         }catch(error){status.textContent=error.message;showPreview(draft.image || (draft.avatar&&draft.avatar!=='@none'?(draft.avatar==='@persona'?avatarUrl:context().getThumbnailUrl('avatar',draft.avatar)):''));}
         finally{picker.disabled=false;add.disabled=false;file.value='';}
     });
@@ -872,11 +883,11 @@ function buildOverrideEditor(initialName='',mode='all',initialOverride=null){
         catch(error){status.textContent=error.message;}
     });
     add.classList.add('hp-commit-override');
-    const actions=document.createElement('div');actions.className='hp-editor-actions';actions.append(picker,browse);
+    const focusButton=action('Focal point',()=>openFocalEditor(preview.src));focusButton.hidden=true;const actions=document.createElement('div');actions.className='hp-editor-actions';actions.append(picker,browse,focusButton);
     const cardLabel=document.createElement('label');cardLabel.textContent='Portrait source: choose a character card, your persona, or Automatic';cardLabel.append(select);
     const cardPreview=document.createElement('img');cardPreview.className='hp-card-preview';cardPreview.alt='Selected character card';cardPreview.hidden=true;cardLabel.prepend(cardPreview);
     cardPreview.addEventListener('error',()=>{cardPreview.hidden=true;cardPreview.removeAttribute('src');});
-    const syncCardPreview=()=>{const card=context().characters?.find(x=>x?.avatar && x.avatar!=='none' && x.avatar===select.value);cardPreview.hidden=!card;if(card)cardPreview.src=context().getThumbnailUrl('avatar',card.avatar);else cardPreview.removeAttribute('src');};select.addEventListener('change',syncCardPreview);
+    const syncCardPreview=()=>{const card=context().characters?.find(x=>x?.avatar && x.avatar!=='none' && x.avatar===select.value);cardPreview.hidden=!card;if(card){cardPreview.src=context().getThumbnailUrl('avatar',card.avatar);applyPortraitFocal(cardPreview,cardPreview.src);}else cardPreview.removeAttribute('src');};select.addEventListener('change',syncCardPreview);
     root.append(instruction,name,colourLabel,cardLabel,file,actions,preview,add,status);
     if(mode==='upload')select.hidden=true;
     const cleanup=()=>{if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl='';}window.removeEventListener('beforeunload',cleanup);};
@@ -926,7 +937,7 @@ function refreshSpeakerManager(){
     const rows=detectedSpeakers(speakerManager.mode);speakerManager.page=Math.min(speakerManager.page,Math.max(0,Math.ceil(rows.length/9)-1));const signature=JSON.stringify([rows,speakerManager.page,settings().overrides]);if(signature===speakerManager.signature)continue;speakerManager.signature=signature;
     const grid=speakerManager.grid;grid.replaceChildren();speakerManager.pagination.replaceChildren();speakerManager.status.textContent=`${rows.length} speaker${rows.length===1?'':'s'} ${speakerManager.mode==='current'?'in this chat':'saved overrides'}`;
     if(!rows.length){grid.textContent=speakerManager.mode==='overrides'?'No saved overrides. Use Add speaker overrides & aliases or select a speaker in Current Speakers.':'No named dialogue or thoughts in this chat yet.';continue;}
-    for(const row of rows.slice(speakerManager.page*9,(speakerManager.page+1)*9)){const card=document.createElement('div');card.className='hp-speaker-card';const portrait=document.createElement('img');portrait.src=row.portrait||assetUrl('silhouette.png');portrait.dataset.hpFallback=String(!row.portrait);portrait.alt='';portrait.addEventListener('error',()=>{if(portrait.getAttribute('src')!==assetUrl('silhouette.png')){portrait.dataset.hpFallback='true';portrait.src=assetUrl('silhouette.png');}else portrait.hidden=true;});
+    for(const row of rows.slice(speakerManager.page*9,(speakerManager.page+1)*9)){const card=document.createElement('div');card.className='hp-speaker-card';const portrait=document.createElement('img');portrait.src=row.portrait||assetUrl('silhouette.png');portrait.dataset.hpFallback=String(!row.portrait);portrait.alt='';applyPortraitFocal(portrait,portrait.src);portrait.addEventListener('error',()=>{if(portrait.getAttribute('src')!==assetUrl('silhouette.png')){portrait.dataset.hpFallback='true';portrait.src=assetUrl('silhouette.png');}else portrait.hidden=true;});
         const name=document.createElement('b');name.textContent=row.name;const variants=document.createElement('small');variants.textContent=row.variants.length>1?'Names: '+row.variants.join(', '):'';
         const colours=document.createElement('div');const source={override:'Override',photo:'Photo colour',model:'HEX in message',memory:'Remembered colour',default:'Default'};
         if(row.override){
