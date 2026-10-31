@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.21.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.22.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -63,6 +63,8 @@ Append mode uses a separate runtime prompt entry beside Author’s Note; it does
 
 Injection preferences are global. Emptying both active sections, switching both injection switches off, or switching **Enable HivePack** off removes HivePack’s runtime injections. Manual instructions remain untouched. Remove duplicate manual formatting instructions when enabling automatic injection. SillyTavern handles macros such as `{{user}}` in the injected text.
 
+When a dialogue wrapper contains multiple quoted passages with narration between them, HivePack styles only the balanced double-quoted passages. For example, `<c>Mira | #9BD4A8: "Wait." She raised a hand. "Listen."</c>` leaves **She raised a hand.** as narration. Straight quotes, curly double quotes, and guillemets are supported. Unquoted or unbalanced dialogue blocks retain their previous whole-block handling. This is display-only; saved messages are untouched.
+
 ### Inner thoughts (manual)
 
 Add this instruction to your Author’s Note:
@@ -116,6 +118,16 @@ The large **HivePack power switch** sits above the other General settings. It us
 General settings are grouped into **Thought bubbles**, **Dialogue & Ripple portraits**, and **Shared styling**. On/off controls use keyboard-accessible honeycomb switches: left is off, right is on. Bubble portraits, hover effects and collapse controls are greyed out when thought styling is off; initial/automatic collapse controls also require collapsible thoughts. Disabling portraits leaves a plain thought bubble without a photo or placeholder. Saved preferences remain intact when a parent feature is off. Existing combined prompt instructions migrate to the separate editors without losing custom text.
 
 The dialogue hover option is greyed out unless **Show persona beside full messages** is enabled. It requires Ripple style. The hovered speaker’s name appears below the right-side portrait, using the effective dialogue or thought colour. No name appears while idle. Leaving hides the name immediately; the image lingers for the configured delay before restoring the persona. Moving onto another speaker cancels the previous linger. A missing or failed portrait leaves or restores the persona without a misleading name label.
+
+### Cursor readability spotlight
+
+Open **General → Readability spotlight**. Enable **Increase chat opacity around the cursor** to add a theme-coloured surface behind chat content. It is strongest at the centre, fades smoothly toward the edges, and follows the pointer with a short movement transition. The background image itself and text opacity are unchanged.
+
+- **Spotlight radius:** 60–600 pixels; default 220.
+- **Spotlight intensity:** 0–100%; default 65%.
+- **Subtle golden honeycomb pattern:** optional, off by default, and faded within the same radius.
+
+The dependent controls are greyed out while the spotlight is disabled. It is clipped to the chat window, ignores clicks and text selection, hides when the pointer leaves chat or the window loses focus, and is removed when HivePack is off. Pointer devices only; reduced-motion preferences disable the movement transition. This feature works independently of dialogue and thought styling and does not require Ripple.
 
 ## Colours and appearance
 
