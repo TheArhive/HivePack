@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.19.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.20.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -30,8 +30,8 @@ The rounded square hive button has a cream-centred honey-orange gradient and sta
 | --- | --- |
 | General | Large green/gray power switch, compact toggle columns, generation timing, collapse behaviour, and launcher reset. |
 | Appearance | Compact layout columns, portraits, sampling methods, and animated colour-priority lists. |
-| Current Speakers | Speakers detected in the open chat, with up to 25 cards per page. |
-| Overrides | Saved speaker overrides, with portrait previews, scope labels, editing and deletion, up to 25 per page. Expand Add speaker overrides & aliases for manual configuration. |
+| Current Speakers | Speakers detected in the open chat, with up to 9 cards per page. |
+| Overrides | Saved speaker overrides, with portrait previews, scope labels, editing and deletion, up to 9 per page. Use the Add speaker overrides & aliases subtab for manual configuration. |
 | Photos | Embedded gallery with preview, pagination, upload, refresh, reuse, and deletion. |
 | Prompt | Optional prompt injection, placement/depth, editable instructions, and reset. |
 
@@ -123,6 +123,8 @@ Open the **Appearance** tab. The live preview shows the active character’s por
 
 ### Colour priority
 
+Priority rows are unnumbered; their order from top to bottom determines precedence.
+
 Each list uses the first available source. Drag each entry by its grip to reorder it. The dragged row follows your pointer and neighbouring rows slide aside; the order is saved when released. Up/down buttons provide a keyboard-friendly alternative, and reduced-motion preferences disable the slide animation.
 
 | List | Sources | Default order |
@@ -188,7 +190,7 @@ HivePack treats an alias as the same speaker, sharing portrait overrides, colour
 
 ### Speaker manager and dialogue controls
 
-Open **Current Speakers** to see speakers detected in the current chat’s completed dialogue and thought blocks. Open **Overrides** to browse saved speaker assignments, including global and character-specific entries. Both views display at most 25 cards per page with Previous/Next controls. Each override card shows its portrait, custom colour and scope, with **Portrait & colour** and **Delete override** controls. The delete button sits at the top right of each card; Save alias is right-aligned. Use the small **G/L** button beside the scope label to switch between global and the currently selected character. Hover **L** to see the bound character. Switching is disabled when no character is selected or an assignment already exists in the destination scope, preserving both entries. The red **×** beside a custom colour clears only that colour, keeping the portrait and scope. Deleting an override keeps the uploaded photo in saved photos and leaves aliases and other character-specific assignments intact. Alias controls treat alternate names as the same speaker. Expand **Add speaker overrides & aliases** to create assignments manually. Navigation has wider labels and a different themed bee for every tab; selected tabs use bright beeswax text on a contrasting honey-brown background.
+Open **Current Speakers** to see speakers detected in the current chat’s completed dialogue and thought blocks. Open **Overrides** to browse saved speaker assignments, including global and character-specific entries. Both views display at most 9 cards per page with Previous/Next controls. Each override card shows its portrait, custom colour and scope, with **Portrait & colour** and **Delete override** controls. The delete button sits at the top right of each card; **Portrait & colour** and **Save alias** share a row below the alias input, with Save alias right-aligned. Current Speakers uses the same arrangement and offers a red **×** beside a configured override colour, even if a different colour source currently has priority. Use the small **G/L** button beside the scope label to switch between global and the currently selected character. Hover **L** to see the bound character. Switching is disabled when no character is selected or an assignment already exists in the destination scope, preserving both entries. The red **×** beside a custom colour clears only that colour, keeping the portrait and scope. Deleting an override keeps the uploaded photo in saved photos and leaves aliases and other character-specific assignments intact. Alias controls treat alternate names as the same speaker. The **Overrides** page has two top subtabs: **Overrides** on the left for saved cards and **Add speaker overrides & aliases** on the right for manual configuration. Navigation has wider labels and a different themed bee for every tab; selected tabs use bright beeswax text on a contrasting honey-brown background.
 
 Click dialogue to open the same speaker controls used by thought portraits: a portrait viewer if the speaker has a photo, or the compact override editor if they do not. Dialogue is keyboard-focusable; Enter or Space opens its controls. Selecting text does not open an editor.
 
@@ -230,7 +232,7 @@ Click the fallback beside a thought without an image to open the compact overrid
 
 The **upload icon** accepts PNG, JPEG, WebP, and GIF files up to 10 MB. Uploading stores the image immediately on your SillyTavern server, but you still need **Add / replace override** to assign it. Closing without saving leaves the upload available for reuse.
 
-The **Photos** tab loads the saved-photo gallery directly, with up to 25 images per page. Click a thumbnail to preview it, Back to return, or **✓ Select photo** to assign it to a speaker. The upload icon opens a portrait upload, and **Refresh photos** reloads the gallery. Override editors also offer **Browse saved photos** in a popup; that popup has Back at the top left, Close at the top right, and **✓ Select photo** beneath the title. Save the override to apply the assignment.
+The **Photos** tab loads the saved-photo gallery directly, with up to 25 images per page. Click a thumbnail to preview it, Back to return, or **✓ Select photo** to assign it to a speaker. The upload icon opens a portrait upload, and **Refresh photos** reloads the gallery. **Photo folder** beside it shows the server-side folder location and a copy button. Browsers cannot launch the server’s file manager, especially on remote servers. The default location is `data/default-user/user/images/HivePack`; a custom data root or account changes the prefix. Override editors also offer **Browse saved photos** in a popup; that popup has Back at the top left, Close at the top right, and **✓ Select photo** beneath the title. Save the override to apply the assignment.
 
 ![Saved-photo gallery with portrait thumbnails, deletion buttons, and page navigation](docs/screenshots/photo-gallery.png)
 

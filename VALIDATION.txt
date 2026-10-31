@@ -1,5 +1,6 @@
-HivePack 1.19.0
+HivePack 1.20.0
 JavaScript module syntax check: passed.
-DOM regression suite covers direct colour removal preserving image and scope, Local-to-Global and Global-to-current-character switching, bound-character tooltips, unavailable Local scope without a character, collision protection, scoped deletion and existing pagination/formatting/injection behaviours.
-Card delete action is positioned at top right; Save alias aligns right. Scope and colour actions sit beside their respective labels.
+DOM regression suite: passed. Covers nine-card Current Speakers and Overrides pagination across 21 entries, 25-photo gallery pagination unchanged, direct current-speaker colour removal retaining portraits, shared card action rows, editable/browse subtab visibility, and folder-location popup. Existing formatting, colours, scope switching, aliases, injection and streaming checks pass.
+Colour-priority labels are unnumbered. Speaker refresh signatures include overrides so colour controls update even when a different colour source wins.
+SillyTavern's server image API and user directory template were inspected: photos live under the user's user/images folder; no file-manager launch action is provided by that API. Photo folder shows a copyable server path template and the default-installation example instead of pretending to open a native server folder.
 Full browser/live SillyTavern visual testing remains outstanding.
