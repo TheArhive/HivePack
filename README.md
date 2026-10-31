@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.23.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.24.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -126,10 +126,17 @@ Open **General → Readability spotlight**. Enable **Increase chat opacity aroun
 - **Reading area width:** 120–1,200 pixels; default 440.
 - **Reading area height:** 80–400 pixels; default 165.
 - **Centre opacity:** 0–100%; default 65%. At 100%, the centre surface is fully opaque.
+- **Vertical offset:** −400 to +400 pixels; default 0. Negative values place the reading box above the cursor, positive values below it.
 - **Extra darkening:** 0–75%; default 25%. Darkens the theme-derived surface colour to improve contrast independently of opacity.
 - **Subtle golden honeycomb pattern:** optional, off by default, and faded within the same radius.
 
 The dependent controls are greyed out while the spotlight is disabled. It is clipped to the chat window, ignores clicks and text selection, hides when the pointer leaves chat or the window loses focus, and is removed when HivePack is off. Pointer devices only; reduced-motion preferences disable the appearance fade. Existing circular-radius preferences migrate to the corresponding width and a shorter reading height. This feature works independently of dialogue and thought styling and does not require Ripple.
+
+### Message speaker portrait stack
+
+Enable **General → Dialogue & Ripple portraits → Show message speakers below persona (Ripple only)**. It requires **Show persona beside full messages** and starts off. Each AI message gets a vertical stack of available speaker portraits below the right-side persona image. Speakers are detected from completed dialogue and named thought wrappers, ordered by first appearance; aliases share one entry. Speakers without an assigned portrait are omitted.
+
+Each portrait starts at 75% of the persona portrait’s width and height. Crowded stacks shrink proportionally to fit the message/visible chat area, and resize with the window. Portrait focal points are respected. Hover or keyboard-focus a portrait to use the existing speaker highlighting behaviour, controlled by **Dim other text when hovering a speaker**. Existing hover portrait swapping also applies if enabled. Click a portrait to open that speaker’s portrait/colour controls. No highlight is applied if that speaker has no styled dialogue or thought visible.
 
 ## Colours and appearance
 

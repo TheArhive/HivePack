@@ -1,5 +1,6 @@
-HivePack 1.23.0
+HivePack 1.24.0
 JavaScript module syntax check: passed.
-DOM regression suite verifies independently adjustable rectangular width/height, immediate pointer coordinate updates, full centre opacity at 100%, theme-surface darkening and zero-darkening restore. Existing narration-safe dialogue, focal-point, pagination, scope and injection checks remain covered.
-The reading box uses intersecting horizontal/vertical feather masks with a broad opaque centre and rounded corners. Position has no CSS transition; only appearance opacity fades. Pattern follows the same box mask. Legacy radius settings migrate to width and shorter height.
-Full browser/live SillyTavern visual testing remains outstanding, including theme stacking and final perceived contrast.
+DOM regression suite: passed. New tests cover per-message portrait detection across dialogue/thoughts, alias deduplication and missing-image omission, 75% initial dimensions, proportional shrinking of a 12-speaker stack, shared hover highlighting and its off state, and dependency on the Ripple persona option. Existing focus, preservation, scope, focal-point and injection regressions pass.
+Reading-box tests verify negative and positive vertical offsets update position without changing cursor tracking.
+Stack sizing reserves space for the main portrait, optional name, padding and gaps; recalculates on settings/content refresh, main image load and viewport resize. Broken secondary images are hidden without an error icon. Offset controls remain with the Readability spotlight settings and follow its disabled state.
+Full browser/live SillyTavern visual testing remains outstanding, including sticky-column sizing across themes.
