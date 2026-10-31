@@ -1,7 +1,5 @@
-HivePack 1.25.0
+HivePack 1.25.1
 JavaScript module syntax check: passed.
-DOM regression suite: passed. New coverage verifies persona exclusion, content-hover promotion and persona demotion, persistence on pointer exit, no promotion from stack hovers, return-to-persona promotion, configurable animation duration and instant mode, animation clone cleanup, full-width reading dimensions/manual-width dependency, and optional reading-line promotion including its disabled state and portrait-column exclusion.
-Animations use transient pointer-inert image clones moving between old/new viewport rectangles; rapid subsequent changes cancel prior clones, while reduced-motion or zero duration skips animation. Session-local per-message promotion preserves saved messages. Portrait stacks still deduplicate aliases and scale to fit.
-Full-width reading follows vertical offset and height; automatic promotion selects the visible thought/dialogue nearest its centre. Required settings are indicated and dependent controls grey out.
-Existing malformed-wrapper recovery, focal points, scope, streaming, injection and preservation regressions pass. CSS braces balance.
-Full browser/live SillyTavern visual testing remains outstanding, including final shuffle motion and theme-specific layout.
+DOM regression suite: passed. New tests cover the 350 ms promotion boundary with a controlled clock, deferred promotion of the latest eligible content target, queued-change cancellation on pointer exit, and geometric exclusion when an event targets chat text but its coordinates lie within the portrait column's transparent area. Existing instant-mode, animated/persistent promotion, full-width reading-line, source preservation and malformed-wrapper checks pass.
+Cooldown is shared between content hovers and reading-line promotion. Default 350 ms, adjustable 0–3000 ms under Appearance; 0 disables throttling. Queued reading-line attempts re-evaluate the current line rather than replaying stale candidates. Chat/master cleanup cancels pending work.
+Full browser/live SillyTavern motion and theme-layout verification remains outstanding.
