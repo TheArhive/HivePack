@@ -1,6 +1,5 @@
-HivePack 1.28.0
+HivePack 1.28.1
 JavaScript module syntax check: passed.
-Full DOM regression suite covers: twelve palette swatches; named tag creation, case-insensitive duplicate rejection and preset-only validation; colour-first/name-second sorting; per-photo assignment/removal; a filtered 27-photo result paginating 25/2; case-insensitive text search; AND chip filters; clear filters; preview/Back retention; identical saved-photo-picker filtering and selection; rename/recolour preserving IDs/assignments; tag deletion preserving photos; successful/failed photo deletion metadata handling; and listener cleanup.
-Tag metadata is saved through existing extension settings. Renames/assignments/filter operations do not issue image API requests; only gallery loading/refresh and actual photo operations do. Photo-tag view listeners are disposed with their popup/panel. Shared manager code keeps pagination consistent across Photos and the assignment picker.
-All earlier malformed-wrapper, streaming, pointer-entry race, focus, cooldown, scope, focal-point, injection and optimisation regressions pass. Optional 80-message benchmark still asserts zero hover-triggered full refreshes/parses. CSS braces balance.
-Full browser/live SillyTavern visual verification remains outstanding.
+Full DOM regression suite: passed. New coverage checks twelve explicit opaque palette fills, the supplied SVG icon path and accessible overlay button, no nested preview/tag buttons, assignment opening from the overlay, enlarged-preview icon placement, and preservation of the parent preview when the tag editor closes.
+Palette fills are inline-important with background-image, opacity and filter reset to resist theme button overrides. Selected palette outlines remain visible. Tag actions are 25px corner overlays, mostly transparent at rest and visible on image hover/keyboard focus; touch layouts retain visibility and reduced-motion removes the fade.
+The supplied tag.svg passes XML parsing. Tag CRUD/search/pagination and source-preservation regressions pass. CSS braces balance. Live SillyTavern visual verification remains outstanding.

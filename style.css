@@ -676,3 +676,17 @@ button.hp-photo-tag[aria-pressed="true"]::before { content:'';width:7px;height:7
 .hp-tag-photo-preview { display:block;max-width:160px;max-height:160px;object-fit:contain;margin:0 auto; }
 .hp-tag-assignment-choices { margin-bottom:16px; }
 @media(max-width:600px) { .hp-photo-tag-tools { grid-template-columns:1fr 1fr; } .hp-photo-tag-tools > input { grid-column:1/-1; } }
+
+/* Dedicated swatches cannot inherit the theme's muted button fill. */
+.hp-picker-dialog .hp-tag-palette button { background-image:none!important;opacity:1!important;filter:none!important;box-shadow:none!important; }
+.hp-photo-image-wrap { position:relative;width:100%; }
+.hp-photo-image-wrap > .hp-photo-view { display:block;width:100%; }
+.hp-photo-preview-wrap { display:table;width:auto;max-width:100%;margin:10px auto; }
+.hp-photo-preview-wrap > .hp-selected-photo { margin:0; }
+:is(.hp-modern-dialog,.hp-picker-dialog) .hp-photo-image-wrap > .hp-photo-tag-action { position:absolute!important;right:4px;bottom:4px;display:flex;align-items:center;justify-content:center;width:25px!important;height:25px!important;min-width:0;margin:0!important;padding:4px!important;border:1px solid transparent!important;border-radius:5px;background:rgba(25,20,13,.3)!important;opacity:.25;cursor:pointer;transition:opacity .12s ease,background .12s ease;z-index:2; }
+.hp-photo-image-wrap > .hp-photo-tag-action img { display:block;width:17px!important;height:17px!important;object-fit:contain;pointer-events:none;filter:invert(89%) sepia(40%) saturate(550%) hue-rotate(340deg); }
+:is(.hp-modern-dialog,.hp-picker-dialog) .hp-photo-image-wrap:hover > .hp-photo-tag-action,
+:is(.hp-modern-dialog,.hp-picker-dialog) .hp-photo-image-wrap:focus-within > .hp-photo-tag-action { opacity:1;background:rgba(25,20,13,.85)!important; }
+.hp-photo-tag-action:focus-visible { outline:2px solid #f4ce78;outline-offset:1px; }
+@media(hover:none) { :is(.hp-modern-dialog,.hp-picker-dialog) .hp-photo-image-wrap > .hp-photo-tag-action { opacity:.85; } }
+@media(prefers-reduced-motion:reduce) { .hp-photo-image-wrap > .hp-photo-tag-action { transition:none!important; } }

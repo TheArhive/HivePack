@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.28.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.28.1** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -273,7 +273,7 @@ The **Photos** tab loads the saved-photo gallery directly, with up to 25 images 
 
 In **Photos**, click **Manage tags** to create a tag with a name and one of twelve preset colours. Names are unique regardless of case and can be up to 60 characters. Existing tags can be renamed, recoloured, or deleted. The palette order is **Red, Orange, Amber, Lime, Green, Teal, Cyan, Blue, Indigo, Purple, Pink, Grey**. Every tag list and photo’s badges follow that colour order, then alphabetical order within each colour.
 
-Click **Tags** on a photo tile or its enlarged preview to apply or remove tags. Changes save immediately. Tags are reusable across photos and are stored with HivePack settings; image files themselves are unchanged.
+Click the small **tag icon** at the bottom right of a photo or its enlarged preview to apply or remove tags. The icon is mostly transparent until hovered or keyboard-focused; it stays visible on touch devices. Changes save immediately. Tags are reusable across photos and are stored with HivePack settings; image files themselves are unchanged.
 
 Both **Photos** and **Browse saved photos** have the same search controls:
 
