@@ -641,3 +641,6 @@ input[type="color"]::-webkit-color-swatch { border:0;border-radius:1px; }
 .hp-speaker-portrait:hover,.hp-speaker-portrait:focus-visible { border-color:#f4ce78;outline:1px solid #f4ce78;outline-offset:1px; }
 .hp-speaker-portrait[hidden] { display:none; }
 .hp-shuffle-ghost { pointer-events:none!important;object-fit:cover;border-radius:7px; }
+
+body.ripplestyle.rpp-enabled #chat > .mes > .rpp-column > .rpp-image { pointer-events:auto; }
+body.ripplestyle.rpp-enabled #chat > .mes > .rpp-column > .rpp-image:focus-visible { outline:1px solid #f4ce78;outline-offset:2px; }

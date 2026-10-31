@@ -1,5 +1,7 @@
-HivePack 1.25.1
+HivePack 1.25.2
 JavaScript module syntax check: passed.
-DOM regression suite: passed. New tests cover the 350 ms promotion boundary with a controlled clock, deferred promotion of the latest eligible content target, queued-change cancellation on pointer exit, and geometric exclusion when an event targets chat text but its coordinates lie within the portrait column's transparent area. Existing instant-mode, animated/persistent promotion, full-width reading-line, source preservation and malformed-wrapper checks pass.
-Cooldown is shared between content hovers and reading-line promotion. Default 350 ms, adjustable 0–3000 ms under Appearance; 0 disables throttling. Queued reading-line attempts re-evaluate the current line rather than replaying stale candidates. Chat/master cleanup cancels pending work.
-Full browser/live SillyTavern motion and theme-layout verification remains outstanding.
+DOM regression suite: passed. New coverage verifies hovering the promoted top portrait highlights its speaker's dialogue and thoughts, preserves the promotion and queue, clears highlighting on exit, and respects the disabled-highlight setting for keyboard focus.
+The main portrait accepts pointer events and keyboard focus. Its speaker identity follows the actual displayed image, including legacy hover/linger mode. Image hover never enters the promotion path and cancels queued changes; animation ghosts are not focusable.
+A further regression verifies pointer coordinates below the rendered portrait column are still blocked inside the message’s right-side gutter. The exclusion extends through the message’s full visible height, clipped to chat bounds.
+Existing cooldown, geometric exclusion, reading-line, malformed-wrapper, source-preservation and focal-point checks pass.
+Full browser/live SillyTavern visual verification remains outstanding.
