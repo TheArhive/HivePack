@@ -1,4 +1,6 @@
-HivePack 1.28.4
+HivePack 1.29.0
 JavaScript module syntax check: passed.
-DOM regressions cover gradient-first ordering in definitions and assigned-photo badges, horizontal 90-degree preset with a short 47–53% midpoint transition, and migration of the previous diagonal gradient/solid Pink/Blue definitions without losing IDs or photo assignments. Existing tag management, filtering, overlay icons and selector disclosure checks pass.
-The swatch, badge fill and colour heading all use the same horizontal transition. Live browser visual verification remains outstanding.
+Full DOM regression suite covers internal tag drag payloads, allowed-drop highlighting, drag-to-photo assignment without opening/selecting the preview, repeated drops without duplicates, rejection of unrelated/stale drop data, and zero image API calls for tag metadata changes.
+Contextual tag-manager tests verify that a newly created tag is automatically assigned to the originating photo and appears selected in its editor. Main-gallery tag creation stays unassigned; editing an existing tag from another photo does not assign it. Creation and auto-assignment happen before one metadata-save notification.
+Native drag handlers are limited to gallery chips/badges and preview drop targets; drag end/drop/window blur clear state. Existing keyboard/tag-editor paths remain available. Prior colour grouping, gradient migration, filtering/pagination, delete preservation, source rendering and performance regressions pass.
+Optional 80-message benchmark still asserts zero hover-triggered full refreshes/parses. CSS braces balance. Live browser drag-and-drop/visual verification remains outstanding.

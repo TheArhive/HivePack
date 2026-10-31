@@ -708,3 +708,7 @@ button.hp-photo-tag[aria-pressed="true"]::before { content:'';width:7px;height:7
 .hp-picker-dialog .hp-tag-definition .hp-delete-tag { display:inline-flex;align-items:center;justify-content:center;width:22px;height:24px;min-width:0;margin:0;padding:0;border:1px solid transparent;background:transparent;color:#ff8d7d;font-size:19px;line-height:1; }
 .hp-picker-dialog .hp-tag-definition .hp-delete-tag:hover { background:#672f25;border-color:#ff8d7d; }
 .hp-tag-definition .hp-delete-tag:focus-visible { outline:2px solid #ff8d7d;outline-offset:1px; }
+
+.hp-photo-tag[draggable="true"] { cursor:grab; }
+.hp-photo-tag.hp-photo-tag-dragging { opacity:.55;cursor:grabbing; }
+.hp-photo-image-wrap.hp-tag-drop-active { outline:2px solid #f4ce78;outline-offset:2px;border-radius:6px;box-shadow:0 0 12px #f4ce7855; }

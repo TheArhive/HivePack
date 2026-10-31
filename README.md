@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.28.4** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.29.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -273,7 +273,9 @@ The **Photos** tab loads the saved-photo gallery directly, with up to 25 images 
 
 In **Photos**, click **Manage tags** to create a tag with a name and one of twelve preset colours. Names are unique regardless of case and can be up to 60 characters. Click an existing tag to load its name and colour into the editor. The small red **×** beside it deletes it after confirmation. The palette order is **Pink/Blue gradient, Red, Orange, Amber, Lime, Green, Teal, Cyan, Indigo, Purple, Brown, Grey**. Every tag list and photo’s badges follow that colour order, then alphabetical order within each colour. The tag-creation/management window groups existing tags into one row per colour and omits empty colours. The gradient runs left to right with a short transition at the centre, and sorts first everywhere. Existing diagonal-gradient, solid Pink and Blue tags migrate to the combined gradient without changing tag IDs or photo assignments.
 
-Click the small **tag icon** at the bottom right of a photo or its enlarged preview to apply or remove tags. The icon is mostly transparent until hovered or keyboard-focused; it stays visible on touch devices. Changes save immediately. Tags are reusable across photos and are stored with HivePack settings; image files themselves are unchanged.
+Click the small **tag icon** at the bottom right of a photo or its enlarged preview to apply or remove tags. The icon is mostly transparent until hovered or keyboard-focused; it stays visible on touch devices. Changes save immediately. Tags are reusable across photos and are stored with HivePack settings; image files themselves are unchanged. In Photos, drag a tag from the filter row or an existing photo’s badges onto a photo preview to copy that tag to it. The target gets a golden outline while it can accept the drop. Repeated drops do not duplicate assignments; clicking tags still filters normally. The saved-photo picker uses the same behaviour.
+
+If you open **Manage tags** from a photo’s tag editor, any **new** tag you create is automatically applied to that photo. Creating tags from the main gallery does not assign them to a photo, and editing an existing tag only updates its definition.
 
 Both **Photos** and **Browse saved photos** have the same search controls:
 
