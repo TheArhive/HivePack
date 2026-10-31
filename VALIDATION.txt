@@ -1,7 +1,4 @@
-HivePack 1.25.2
+HivePack 1.25.3
 JavaScript module syntax check: passed.
-DOM regression suite: passed. New coverage verifies hovering the promoted top portrait highlights its speaker's dialogue and thoughts, preserves the promotion and queue, clears highlighting on exit, and respects the disabled-highlight setting for keyboard focus.
-The main portrait accepts pointer events and keyboard focus. Its speaker identity follows the actual displayed image, including legacy hover/linger mode. Image hover never enters the promotion path and cancels queued changes; animation ghosts are not focusable.
-A further regression verifies pointer coordinates below the rendered portrait column are still blocked inside the message’s right-side gutter. The exclusion extends through the message’s full visible height, clipped to chat bounds.
-Existing cooldown, geometric exclusion, reading-line, malformed-wrapper, source-preservation and focal-point checks pass.
-Full browser/live SillyTavern visual verification remains outstanding.
+DOM regression suite verifies that the top portrait has button semantics and opens the displayed speaker's portrait/colour controls via click and Enter. Space activation uses the same handler and prevents page scrolling. Hover highlighting and promotion exclusion remain unchanged.
+Existing cooldown, source preservation, reading-line, focal-point and malformed-wrapper regressions remain covered. Live browser visual verification remains outstanding.

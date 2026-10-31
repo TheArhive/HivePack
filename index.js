@@ -125,7 +125,7 @@ function refresh() {
             column.className = 'rpp-column';
             column.setAttribute('aria-hidden', 'false');
             const img = document.createElement('img');
-            img.className = 'rpp-image';img.tabIndex=0;bindSpeakerHover(img);img.addEventListener('focus',()=>enterSpeaker(img));img.addEventListener('blur',event=>leaveSpeaker(img,event));
+            img.className = 'rpp-image';img.tabIndex=0;img.setAttribute('role','button');const openTopPortrait=()=>openSpeaker(img.dataset.hpSpeaker||context().name1);img.addEventListener('click',openTopPortrait);img.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openTopPortrait();}});bindSpeakerHover(img);img.addEventListener('focus',()=>enterSpeaker(img));img.addEventListener('blur',event=>leaveSpeaker(img,event));
             img.alt = '';
             img.loading = 'lazy';
             img.decoding = 'async';
@@ -138,7 +138,7 @@ function refresh() {
         const hovered=dialogueHover.get(mes),hold=portraitHolds.get(mes),swapping=s.dialoguePortraitHover&&s.enabled;
         const live=hovered?.isConnected?hovered:null;let promotion=promotedSpeakers.get(mes);if(!s.messageSpeakerPortraits||!swapping||promotion?.persona!==context().name1){promotedSpeakers.delete(mes);promotion=null;}
         const contentHover=live&&!live.matches('.hp-speaker-portrait,.rpp-image'),source=swapping?(s.messageSpeakerPortraits?(promotion?resolvePortrait(promotion.name,s):''):(live?resolvePortrait(live.dataset.hpSpeaker,s):hold?.src)):'';
-        const target=source||avatarUrl,before=s.messageSpeakerPortraits&&img.getAttribute('src')!==target?snapshotSpeakerPortraits(column):null;applyPortraitFocal(img,target);if(img.getAttribute('src')!==target)img.setAttribute('src',target);img.dataset.hpSpeaker=source?(promotion?.name||live?.dataset.hpSpeaker||hold?.name||context().name1):context().name1;img.alt=img.dataset.hpSpeaker||'';img.setAttribute('aria-label',`Highlight ${img.dataset.hpSpeaker||'persona'}`);
+        const target=source||avatarUrl,before=s.messageSpeakerPortraits&&img.getAttribute('src')!==target?snapshotSpeakerPortraits(column):null;applyPortraitFocal(img,target);if(img.getAttribute('src')!==target)img.setAttribute('src',target);img.dataset.hpSpeaker=source?(promotion?.name||live?.dataset.hpSpeaker||hold?.name||context().name1):context().name1;img.alt=img.dataset.hpSpeaker||'';img.setAttribute('aria-label',`View portrait and manage ${img.dataset.hpSpeaker||'persona'}`);
         const caption=column.querySelector('.hp-side-speaker');caption.hidden=!live||!swapping||!source||(s.messageSpeakerPortraits&&(!contentHover||canonicalName(live.dataset.hpSpeaker,s)!==canonicalName(promotion?.name||context().name1,s)));
         if(live&&swapping&&(!s.messageSpeakerPortraits||contentHover)){caption.textContent=live.dataset.hpSpeaker;caption.style.color=live.classList.contains('hp-monologue')?(resolveColour(live,s)||'#91a8c5'):(resolveDialogueColour(live.dataset.hpSpeaker,live.dataset.hpExplicitColour,s).colour||'#91a8c5');}
         updateMessageSpeakerPortraits(mes,column,s);if(before)animateSpeakerShuffle(before,column,s);
