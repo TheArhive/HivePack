@@ -1,10 +1,5 @@
-HivePack 1.27.0
+HivePack 1.27.1
 JavaScript module syntax check: passed.
-Full DOM regression suite: passed, including formatting/source preservation, malformed-wrapper recovery, streaming, cooldown/queued promotions, geometric gallery exclusion, source-specific focus, focal points, scoped overrides and prompt injection.
-Performance regressions: a hover-only interaction performs no full refresh; repeated focus reuses existing narration wrappers; a real message edit invalidates cached rendering; message parse cache updates on source edits; 20 pointer events coalesce to one spotlight geometry update; unchanged priority rows survive unrelated slider updates; the visibility index does not measure an offscreen message or re-observe stable nodes.
-Optional synthetic benchmark: 80 messages, 24 hover enter/leave transitions after warm-up.
-Before: 680.6 ms elapsed, 24 full refreshes, 5,760 dialogue parses.
-After representative runs: 39.8–48.3 ms elapsed, 0 full refreshes, 0 dialogue parses.
-Timing includes harness waits and mocked DOM/layout APIs. It is not a browser FPS measurement or a guarantee of equivalent live speedup. Benchmark run asserts zero hover-triggered full refreshes and parses.
-Optimizations: message-local coalesced hover frames, idempotent focus updates, precise own-mutation filtering, weak message parse caches, cached settings initialization/aliases, unchanged-render and priority-list fast paths, frame-coalesced pointer movement, visible-message reader shortlist with fallback and unchanged-style-write avoidance. Reader visibility observer disconnects when unused.
-Full browser/live SillyTavern performance and theme visual testing remain outstanding.
+DOM regression suite: passed. New race coverage reproduces content mouseenter followed by gallery pointerover before pointermove/render, and an old-position reading frame followed by current-position mouseover. Neither promotes while the latest pointer lies in the empty speaker gutter; moving into actual text then promotes normally.
+Capture-phase pointerover/mouseover updates position before hover handlers. Content promotion candidates are checked in the existing message-local render frame against the latest coordinates, not committed synchronously on entry. Related-target transitions forward current event coordinates. Cooldown and reader promotion share the exclusion guard.
+All prior formatting, cache invalidation, visibility, cooldown and preservation tests pass. Optional 80-message benchmark retains zero hover-triggered full refreshes and parses. Full browser/live SillyTavern verification remains outstanding.
