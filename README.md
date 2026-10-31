@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.25.3** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.26.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -114,6 +114,8 @@ The large **HivePack power switch** sits above the other General settings. It us
 | Show persona beside full messages (Ripple only) | Adds your persona portrait to the right of AI messages. |
 | Style character dialogue (<c>) | Enables dialogue colouring. On by default. |
 | Show hovered speaker portrait (dialogue and thoughts, Ripple only) | Temporarily replaces the right-side persona portrait when hovering dialogue or a thought bubble. Off by default. |
+
+**General → Shared styling → Highlight on hover** is one compact multi-select control: **Dialogue**, **Thoughts**, and **Portraits**. Click a segment to allow or suppress highlighting from that source. Portraits covers both the speaker gallery and the top persona/speaker slot, including keyboard focus. All three start enabled; the master **Dim other text when hovering a speaker** switch still turns highlighting off entirely and greys out the segments. These preferences do not disable colours, thought hover enlargement, portrait promotion, or portrait controls. The live preview respects the dialogue/thought source selections.
 
 General settings are grouped into **Thought bubbles**, **Dialogue & Ripple portraits**, and **Shared styling**. On/off controls use keyboard-accessible honeycomb switches: left is off, right is on. Bubble portraits, hover effects and collapse controls are greyed out when thought styling is off; initial/automatic collapse controls also require collapsible thoughts. Disabling portraits leaves a plain thought bubble without a photo or placeholder. Saved preferences remain intact when a parent feature is off. Existing combined prompt instructions migrate to the separate editors without losing custom text.
 

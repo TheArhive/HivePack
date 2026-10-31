@@ -1,4 +1,5 @@
-HivePack 1.25.3
+HivePack 1.26.0
 JavaScript module syntax check: passed.
-DOM regression suite verifies that the top portrait has button semantics and opens the displayed speaker's portrait/colour controls via click and Enter. Space activation uses the same handler and prevents page scrolling. Hover highlighting and promotion exclusion remain unchanged.
-Existing cooldown, source preservation, reading-line, focal-point and malformed-wrapper regressions remain covered. Live browser visual verification remains outstanding.
+DOM regression suite: passed. New coverage verifies three compact source segments, dialogue-only suppression while portrait swapping remains active, independently suppressed thoughts and portraits, immediate clearing while a disabled source is hovered, pressed-state persistence and the master highlight dependency.
+Source gating applies to mouse and keyboard hover/focus paths and repeated refreshes, without changing promotion or formatting. Gallery and top portraits share the Portraits segment. Live preview CSS follows dialogue and thought selections. Existing cooldown, malformed-wrapper, scope, focal-point and reading-line regressions pass.
+CSS braces balance. Full browser/live SillyTavern visual verification remains outstanding.
