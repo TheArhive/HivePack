@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.24.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.24.1** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -63,7 +63,7 @@ Append mode uses a separate runtime prompt entry beside Author’s Note; it does
 
 Injection preferences are global. Emptying both active sections, switching both injection switches off, or switching **Enable HivePack** off removes HivePack’s runtime injections. Manual instructions remain untouched. Remove duplicate manual formatting instructions when enabling automatic injection. SillyTavern handles macros such as `{{user}}` in the injected text.
 
-When a dialogue wrapper contains multiple quoted passages with narration between them, HivePack styles only the balanced double-quoted passages. For example, `<c>Mira | #9BD4A8: "Wait." She raised a hand. "Listen."</c>` leaves **She raised a hand.** as narration. Straight quotes, curly double quotes, and guillemets are supported. Unquoted or unbalanced dialogue blocks retain their previous whole-block handling. This is display-only; saved messages are untouched.
+When a dialogue wrapper contains multiple quoted passages with narration between them, HivePack styles only the balanced double-quoted passages. For example, `<c>Mira | #9BD4A8: "Wait." She raised a hand. "Listen."</c>` leaves **She raised a hand.** as narration. Straight quotes, curly double quotes, and guillemets are supported. Unquoted or unbalanced dialogue blocks retain their previous whole-block handling. If a new valid dialogue opener appears before the previous wrapper closes, HivePack recovers the earlier segment at that boundary. Recovered segments are displayed once a matching closing tag arrives; later blocks and repeated speaker headers remain independent. Extra orphan closing tags are ignored. This is display-only; saved messages are untouched.
 
 ### Inner thoughts (manual)
 
