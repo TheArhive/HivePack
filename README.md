@@ -1,6 +1,6 @@
 # HivePack
 
-**Version 1.27.1** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
+**Version 1.28.0** · A SillyTavern extension for styled inner thoughts, character dialogue colours, and speaker portraits.
 
 HivePack styles the chat display without rewriting saved messages. Optional model-instruction injection is off by default. Colour memory is stored separately in chat metadata; portraits and preferences are stored on your SillyTavern server.
 
@@ -32,7 +32,7 @@ The rounded square hive button has a cream-centred honey-orange gradient and sta
 | Appearance | Compact layout columns, portraits, sampling methods, and animated colour-priority lists. |
 | Current Speakers | Speakers detected in the open chat, with up to 9 cards per page. |
 | Overrides | Saved speaker overrides, with portrait previews, scope labels, editing and deletion, up to 9 per page. Use the Add speaker overrides & aliases subtab for manual configuration. |
-| Photos | Embedded gallery with preview, pagination, upload, refresh, reuse, and deletion. |
+| Photos | Embedded gallery with preview, tag management/search, pagination, upload, refresh, reuse, and deletion. |
 | Prompt | Optional prompt injection, placement/depth, editable instructions, and reset. |
 
 The live preview shows narration, coloured dialogue, a thought for the selected character, and a thought without an associated portrait. It updates as preferences change. On desktop the panel can be resized from its corner and remembers its size; on mobile it fills the screen. General and Appearance use compact columns, and the wider preview stays beside the controls on large screens.
@@ -268,6 +268,20 @@ The **Photos** tab loads the saved-photo gallery directly, with up to 25 images 
 ![Saved-photo gallery with portrait thumbnails, deletion buttons, and page navigation](docs/screenshots/photo-gallery.png)
 
 **Delete photo** permanently deletes an uploaded image after confirmation. Its portrait assignments are cleared across scopes, retaining any custom colours. Failed uploads or deletions keep existing assignments. Photos use server-relative paths and remain available when accessing the same server from another device. Back up settings and uploaded images when moving servers.
+
+### Photo tags and tag search
+
+In **Photos**, click **Manage tags** to create a tag with a name and one of twelve preset colours. Names are unique regardless of case and can be up to 60 characters. Existing tags can be renamed, recoloured, or deleted. The palette order is **Red, Orange, Amber, Lime, Green, Teal, Cyan, Blue, Indigo, Purple, Pink, Grey**. Every tag list and photo’s badges follow that colour order, then alphabetical order within each colour.
+
+Click **Tags** on a photo tile or its enlarged preview to apply or remove tags. Changes save immediately. Tags are reusable across photos and are stored with HivePack settings; image files themselves are unchanged.
+
+Both **Photos** and **Browse saved photos** have the same search controls:
+
+- Type part of a tag name in **Search photos by tag**. Search ignores case and matches any assigned tag with that text.
+- Select coloured tag chips to require all selected tags. Text search can be combined with the chips.
+- Use **Clear filters** to return to the complete gallery. Filtering happens before pagination, retaining 25 photos per page. Preview/Back preserves the current search and page.
+
+Renaming or recolouring a tag keeps its photo assignments. Deleting a tag removes that tag from every photo without deleting the photos. Successfully deleting a photo removes its tag assignments but retains reusable tag definitions; failed deletions preserve both. Tag edits update open galleries without refetching image lists.
 
 ## Collapse controls and streaming
 
